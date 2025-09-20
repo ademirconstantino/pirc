@@ -1,32 +1,4 @@
-head	1.2;
-access;
-symbols;
-locks; strict;
-comment	@# @;
-expand	@o@;
-
-
-1.2
-date	2004.11.13.20.36.00;	author ziegfried;	state dead;
-branches;
-next	1.1;
-
-1.1
-date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
-branches;
-next	;
-
-
-desc
-@@
-
-
-1.2
-log
-@*** empty log message ***
-@
-text
-@/*
+/*
  *                 Sun Public License Notice
  * 
  * The contents of this file are subject to the Sun Public License
@@ -190,13 +162,6 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
     /** A mapping <Component, AbsoluteConstraints> */
     protected java.util.Hashtable constraints = new java.util.Hashtable();
 }
-
-@
-
-
-1.1
-log
-@ouxi
 @
 text
 @@
