@@ -1,32 +1,4 @@
-head	1.2;
-access;
-symbols;
-locks; strict;
-comment	@# @;
-expand	@o@;
-
-
-1.2
-date	2004.11.13.20.36.01;	author ziegfried;	state dead;
-branches;
-next	1.1;
-
-1.1
-date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
-branches;
-next	;
-
-
-desc
-@@
-
-
-1.2
-log
-@*** empty log message ***
-@
-text
-@/**
+/**
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )
@@ -152,7 +124,7 @@ public class PIRCFrame extends JFrame {
 				pircMenu.switchConn();
 				ident.start();
 			} catch (Exception e) {
-				new PIRCExceptionWindow("Não foi possível conectar", e).show();
+				new PIRCExceptionWindow("NÃ£o foi possÃ­vel conectar", e).show();
 			}
 		}
 	}
@@ -169,7 +141,7 @@ public class PIRCFrame extends JFrame {
 			getIrcSocket().println("NICK " + nick);
 			getIrcSocket().println("USER " + name + " 0 * :" + email);
 		} catch (IRCSocketException e) {
-			new PIRCExceptionWindow("Não foi possível conectar", e).show();
+			new PIRCExceptionWindow("NÃ£o foi possÃ­vel conectar", e).show();
 		}
 		proHandle.setPIRCFrame(this);
 		proHandle.setPIRCConnectionWindow(connection);
@@ -255,13 +227,3 @@ public class PIRCFrame extends JFrame {
 	private ChannelsHashTable channels = new ChannelsHashTable(this);
 
 }
-@
-
-
-1.1
-log
-@ouxi
-@
-text
-@@
-
