@@ -1,53 +1,25 @@
-head	1.2;
-access;
-symbols;
-locks; strict;
-comment	@# @;
-expand	@o@;
-
-
-1.2
-date	2004.11.13.20.36.01;	author ziegfried;	state dead;
-branches;
-next	1.1;
-
-1.1
-date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
-branches;
-next	;
-
-
-desc
-@@
-
-
-1.2
-log
-@*** empty log message ***
-@
-text
-@/**
+/**
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
   * 
-  * Este programa é software livre; você pode redistribuí-lo e/ou
-  * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
-  * publicada pela Free Software Foundation; tanto a versão 2 da
-  * Licença como (a seu critério) qualquer versão mais nova.
+  * Este programa Ã© software livre; vocÃª pode redistribuÃ­-lo e/ou
+  * modificÃ¡-lo sob os termos da LicenÃ§a PÃºblica Geral GNU, conforme
+  * publicada pela Free Software Foundation; tanto a versÃ£o 2 da
+  * LicenÃ§a como (a seu critÃ©rio) qualquer versÃ£o mais nova.
   *
-  * Este programa é distribuído na expectativa de ser útil, mas SEM
-  * QUALQUER GARANTIA; sem mesmo a garantia implícita de
-  * COMERCIALIZAÇÃO ou de ADEQUAÇÃO A QUALQUER PROPÓSITO EM
-  * PARTICULAR. Consulte a Licença Pública Geral GNU para obter mais
+  * Este programa Ã© distribuÃ­do na expectativa de ser Ãºtil, mas SEM
+  * QUALQUER GARANTIA; sem mesmo a garantia implÃ­cita de
+  * COMERCIALIZAÃ‡ÃƒO ou de ADEQUAÃ‡ÃƒO A QUALQUER PROPÃ“SITO EM
+  * PARTICULAR. Consulte a LicenÃ§a PÃºblica Geral GNU para obter mais
   * detalhes.
   *
-  * Você deve ter recebido uma cópia da Licença Pública Geral GNU
-  * junto com este programa; se não, escreva para a Free Software
+  * VocÃª deve ter recebido uma cÃ³pia da LicenÃ§a PÃºblica Geral GNU
+  * junto com este programa; se nÃ£o, escreva para a Free Software
   * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
   * 02111-1307, USA.
   *
-  * Você pode entrar em contato pelo endereço de email:
+  * VocÃª pode entrar em contato pelo endereÃ§o de email:
   * ziegfried@@onda.com.br
   *
   */
@@ -213,7 +185,7 @@ public class IRCSocket {
 			throw new IRCSocketException(" Already connected.");
 		}
 		if (timeOut < 0) {
-			throw new IRCSocketException(" TimeOut can´t be negative value.");
+			throw new IRCSocketException(" TimeOut canÂ´t be negative value.");
 		}
 		if (isClosed) {
 			throw new IRCSocketException(" Socket is closed.");
@@ -321,7 +293,7 @@ public class IRCSocket {
 	}
 
 	/**
-	 * Write String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
+	 * Write String to server with CRLF (Â´\rÂ´ ( carriage returns ) & Â´\nÂ´ ( line feed ))
 	 *
 	 * @@param  strWrite                Description of the Parameter
 	 * @@exception  IRCSocketException  Description of the Exception
@@ -332,7 +304,7 @@ public class IRCSocket {
 	}
 
 	/**
-	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
+	 * Print String to server with CRLF (Â´\rÂ´ ( carriage returns ) & Â´\nÂ´ ( line feed ))
 	 *
 	 * @@param  strPrint            	Str to print
 	 * @@exception  IRCSocketException
@@ -343,7 +315,7 @@ public class IRCSocket {
 	}
 
 	/**
-	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
+	 * Print String to server with CRLF (Â´\rÂ´ ( carriage returns ) & Â´\nÂ´ ( line feed ))
 	 *
 	 * @@param  strPrint                Str to print
 	 * @@exception  IRCSocketException
@@ -390,8 +362,8 @@ public class IRCSocket {
 
 	/**
 	 * Gets the IRCSocket currtent state
-	 * if returns <code> true </code> it´s connected
-	 * if returns <code> false </code> it´s not connected
+	 * if returns <code> true </code> itÂ´s connected
+	 * if returns <code> false </code> itÂ´s not connected
 	 * @@return    The connected <code> boolean </code> value
 	 */
 
@@ -401,8 +373,8 @@ public class IRCSocket {
 
 	/**
 	 * Gets the IRCSocket configured value
-	 * if returns <code> true </code> the ircsocket it´s configured
-	 * if returns <code> false </code> the ircsocket it´s not configured
+	 * if returns <code> true </code> the ircsocket itÂ´s configured
+	 * if returns <code> false </code> the ircsocket itÂ´s not configured
 	 * @@return    true if is configured false if not configured
 	 */
 
@@ -528,13 +500,4 @@ public class IRCSocket {
 	private boolean isConfigured = false;
 	private int timeOut = 30000;
 
-}@
-
-
-1.1
-log
-@ouxi
-@
-text
-@@
-
+}
