@@ -30,3 +30,5 @@ bin/
 /target/
 /.idea/
 /pirc.iml
+
+*.class
