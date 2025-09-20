@@ -1,32 +1,4 @@
-head	1.2;
-access;
-symbols;
-locks; strict;
-comment	@# @;
-expand	@o@;
-
-
-1.2
-date	2004.11.13.20.36.01;	author ziegfried;	state dead;
-branches;
-next	1.1;
-
-1.1
-date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
-branches;
-next	;
-
-
-desc
-@@
-
-
-1.2
-log
-@*** empty log message ***
-@
-text
-@/**
+/**
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )
@@ -254,13 +226,3 @@ public class Identd extends Thread {
 	private final float versionInfo = (float) 0.3;
 
 }
-@
-
-
-1.1
-log
-@ouxi
-@
-text
-@@
-
