@@ -1,10 +1,10 @@
-## Portable IRC Project created in 2002
+## Portable IRC Project created in 2002 (First branch commit: 11/12/2002)
 ### https://portableirc.sourceforge.io/
 ### pIRC (portable IRC) is a powerfull IRC client 100% Pure Java.
 Project restored from CVS repository @ SourceForge
 
 Recovered from the branch: 1.2
-Date: 2004.11.13
+Date: 13/11/2004
 
 This was one of my first projects using the Java 1.3 programming language.
 
