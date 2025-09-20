@@ -1,53 +1,25 @@
-head	1.2;
-access;
-symbols;
-locks; strict;
-comment	@# @;
-expand	@o@;
-
-
-1.2
-date	2004.11.13.20.36.01;	author ziegfried;	state dead;
-branches;
-next	1.1;
-
-1.1
-date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
-branches;
-next	;
-
-
-desc
-@@
-
-
-1.2
-log
-@*** empty log message ***
-@
-text
-@/**
+/**
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
   * 
-  * Este programa é software livre; você pode redistribuí-lo e/ou
-  * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
-  * publicada pela Free Software Foundation; tanto a versão 2 da
-  * Licença como (a seu critério) qualquer versão mais nova.
+  * Este programa Ã© software livre; vocÃª pode redistribuÃ­-lo e/ou
+  * modificÃ¡-lo sob os termos da LicenÃ§a PÃºblica Geral GNU, conforme
+  * publicada pela Free Software Foundation; tanto a versÃ£o 2 da
+  * LicenÃ§a como (a seu critÃ©rio) qualquer versÃ£o mais nova.
   *
-  * Este programa é distribuído na expectativa de ser útil, mas SEM
-  * QUALQUER GARANTIA; sem mesmo a garantia implícita de
-  * COMERCIALIZAÇÃO ou de ADEQUAÇÃO A QUALQUER PROPÓSITO EM
-  * PARTICULAR. Consulte a Licença Pública Geral GNU para obter mais
+  * Este programa Ã© distribuÃ­do na expectativa de ser Ãºtil, mas SEM
+  * QUALQUER GARANTIA; sem mesmo a garantia implÃ­cita de
+  * COMERCIALIZAÃ‡ÃƒO ou de ADEQUAÃ‡ÃƒO A QUALQUER PROPÃ“SITO EM
+  * PARTICULAR. Consulte a LicenÃ§a PÃºblica Geral GNU para obter mais
   * detalhes.
   *
-  * Você deve ter recebido uma cópia da Licença Pública Geral GNU
-  * junto com este programa; se não, escreva para a Free Software
+  * VocÃª deve ter recebido uma cÃ³pia da LicenÃ§a PÃºblica Geral GNU
+  * junto com este programa; se nÃ£o, escreva para a Free Software
   * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
   * 02111-1307, USA.
   *
-  * Você pode entrar em contato pelo endereço de email:
+  * VocÃª pode entrar em contato pelo endereÃ§o de email:
   * ziegfried@@onda.com.br
   *
   */
@@ -57,12 +29,12 @@ package org.aconstantino.pirc;
 
 /**
  *  Strip common mIRC colors
- *  @@author     João Pedrosa
+ *  @@author     JoÃ£o Pedrosa
  */
 
 public class ColorStrip {
 
-	private final String author = "João Pedrosa";
+	private final String author = "JoÃ£o Pedrosa";
 	private final float versionInfo = (float) 0.2;
 	private static final String RE_COLOR = "(+(\\d{1,2})?(,\\d{1,2})?)?()?()?()?()?()?";;
 
@@ -121,13 +93,3 @@ public class ColorStrip {
 	}
 
 }
-@
-
-
-1.1
-log
-@ouxi
-@
-text
-@@
-
