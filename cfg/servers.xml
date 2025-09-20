@@ -1,0 +1,43 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.11.13.20.36.02;	author ziegfried;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@<?xml version='1.0'?>
+<servers>
+<server url="irc.sercomtel.com.br" port="6667" group="brasnet" name="Sercomtel"/>
+<server url="Elogica.REC.PE.Brasnet.org" port="6667" group="brasnet" name="Elogica-Refice/PE"/>
+<server url="Samnet.NAT.RN.Brasnet.org" port="6667" group="brasnet" name="Samnet-Natal/RN"/>
+</servers>@
+
+
+1.1
+log
+@ouxi
+@
+text
+@@
+

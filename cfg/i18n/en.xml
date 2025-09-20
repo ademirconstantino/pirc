@@ -1,0 +1,55 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.11.13.20.36.02;	author ziegfried;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@﻿<?xml version='1.0' ?>
+
+ <language name="English">
+	<connection-dialog>
+		<frame title="Connection"/>
+		<jlabels name="Name" email="E-Mail"
+			 nickname="Nickname"
+			 alternative="Alternative"
+			 group="Group"
+			 server="Server"
+			 edit="Edit"
+			 add="Add"
+			 delete="Delete"/>
+		<jbuttons connect="Connect"
+			  cancel="Cancel"/>
+		<titledborder server="Server"/>
+	</connection-dialog>
+ </language>@
+
+
+1.1
+log
+@ouxi
+@
+text
+@@
+

@@ -1,0 +1,54 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.11.13.20.36.02;	author ziegfried;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.11.05.49.16;	author ziegfried;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@<?xml version='1.0' ?>
+ <profiles>
+	<profile name="suzuki2k" image="" nickname="s2k">
+		<preferences>
+			<p invisible="n" logging="y"/>
+			<ctcp>
+				<ctcp reply="y" version="sys"/>
+			</ctcp>
+			<quit message="bye"/>
+			<i18n>
+				<lang pref="pt-br"/>
+			</i18n>
+			<connection>
+			</connection>
+	</preferences>
+	</profile>
+ </profiles>@
+
+
+1.1
+log
+@ouxi
+@
+text
+@@
+

@@ -1,0 +1,50 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+expand	@o@;
+
+
+1.2
+date	2004.11.13.20.36.01;	author ziegfried;	state dead;
+branches;
+next	1.1;
+
+1.1
+date	2002.12.11.05.49.17;	author ziegfried;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@﻿<?xml version='1.0' ?>
+ <theme name="Dark">
+	<channelwindow>
+		<textarea color="0,0,0"/>
+		<textfield color="255,84,0"/>
+		<jlist color="0,0,0"/>
+	</channelwindow>
+	<fonts>
+		<textarea font="Verdana" color="255,255,255"/>
+		<textfield font="Verdana" color="0,0,0"/>
+		<jlist font="Verdana" color="255,255,255"/>
+	</fonts>
+ </theme>@
+
+
+1.1
+log
+@ouxi
+@
+text
+@@
+
