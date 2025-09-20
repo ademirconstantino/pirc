@@ -8,7 +8,7 @@ Date: 2004.11.13
 
 This was one of my first projects using the Java 1.3 programming language.
 
-## License as tracted from the orginal project:
+## License as extracted from the orginal project:
 
 		      LICENÇA PÚBLICA GERAL GNU
 		       Versão 2, junho de 1991
