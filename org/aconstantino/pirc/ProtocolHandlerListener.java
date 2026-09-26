@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 package org.aconstantino.pirc;
@@ -42,4 +42,11 @@ public interface ProtocolHandlerListener {
 	public void onChanMsg(String to, String msg, String from);
 	public void onTopic(String channel, String param);
 	public void onTopicSet(String by, String chan, String newTopic);
+	public void onNickInUse(String nick);
+	public void onQuit(String prefix, String reason);
+	public void onKick(String channel, String who, String by, String reason);
+	public void onMode(String target, String modes, String by);
+	public void onPrivMsg(String from, String msg);
+	public void onNotice(String to, String msg, String from);
+	public void onCtcp(String to, String msg, String from);
 }

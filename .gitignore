@@ -32,3 +32,6 @@ bin/
 /pirc.iml
 
 *.class
+### Build ###
+/build/
+/pirc.jar

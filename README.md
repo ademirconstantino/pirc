@@ -8,6 +8,19 @@ Date: 13/11/2004
 
 This was one of my first projects using the Java 1.3 programming language.
 
+## Build and run
+
+	./build.sh
+	java -jar pirc.jar
+
+Run it from the project directory, pIRC reads the servers from `cfg/servers.xml`.
+Use *Arquivo > Conectar* to choose a server and connect.
+
+Text typed in the windows is sent as a message; text starting with `/` is sent
+as an IRC command (`/join #channel`, `/nick newnick`, `/part`, `/quit`, ...),
+plus `/msg <nick> <text>` and `/me <text>`. Double-click a nickname in a channel
+to open a private window.
+
 ## License as extracted from the orginal project:
 
 		      LICENÇA PÚBLICA GERAL GNU

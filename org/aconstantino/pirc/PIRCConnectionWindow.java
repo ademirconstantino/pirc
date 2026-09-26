@@ -20,11 +20,9 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
-
-// file status: unterminated
 
 package org.aconstantino.pirc;
 
@@ -35,7 +33,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Hashtable;
+import java.io.IOException;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
@@ -43,6 +41,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
@@ -51,7 +50,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  14:33:27 
  */
 public class PIRCConnectionWindow extends JDialog {
@@ -277,52 +276,109 @@ public class PIRCConnectionWindow extends JDialog {
 	}
 
 	public void initServers() {
-		g = new Groups(reader.getH());
-
-		jc_Group.addItem("all");
-		for (int i = 0; i < g.getGroups().size(); i++) {
-			try {
-				String s = (String) g.getGroups().get(i);
-				jc_Group.addItem(s);
-			} catch (NullPointerException e) {
-			}
-		}
-		for (int i = 0; i < g.getServerValues().size(); i++) {
-			if (jc_Group.getSelectedIndex() == 0) {
-				String[] x = (String[]) g.getServerValues().get(i);
-				jc_Server.addItem(x[1]);
-			} else {
-				break;
-			}
-		}
+		reloadServers(null);
 
 		jc_Group.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String s = (String) jc_Group.getSelectedItem();
-				if (jc_Group.getSelectedIndex() != 0) {
-					if (g.getGroup(s)) {
-						jc_Server.removeAllItems();
-						for (int i = 0; i < g.getServerValues().size(); i++) {
-							if (jc_Group.getSelectedIndex() > 0) {
-								String[] x =
-									(String[]) g.getServerValues().get(i);
-								if (x[0].equals(s)) {
-									jc_Server.addItem(x[1]);
-								}
-							} else {
-								break;
-							}
-						}
-					}
-				} else {
-					jc_Server.removeAllItems();
-					for (int i = 0; i < g.getServerValues().size(); i++) {
-						String[] x = (String[]) g.getServerValues().get(i);
-						jc_Server.addItem(x[1]);
-					}
+				if (!reloading) {
+					fillServers();
 				}
 			}
 		});
+
+		sb_Add.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				editServer(null);
+			}
+		});
+
+		sb_Edit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (getServer() != null) {
+					editServer(getServer());
+				}
+			}
+		});
+
+		sb_Del.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				deleteServer();
+			}
+		});
+	}
+
+	/**
+	 * Reloads the groups and servers combos
+	 * @param selected the server to be selected, can be null
+	 */
+	private void reloadServers(String[] selected) {
+		reloading = true;
+		Object group = jc_Group.getSelectedItem();
+		g = new Groups(reader.getH());
+		jc_Group.removeAllItems();
+		jc_Group.addItem("all");
+		for (int i = 0; i < g.getGroups().size(); i++) {
+			jc_Group.addItem(g.getGroups().get(i));
+		}
+		if (group != null && g.getGroup((String) group)) {
+			jc_Group.setSelectedItem(group);
+		}
+		reloading = false;
+		fillServers();
+		if (selected != null && servers.contains(selected)) {
+			jc_Server.setSelectedIndex(servers.indexOf(selected));
+		}
+	}
+
+	/**
+	 * Fills the servers combo with the servers of the selected group
+	 */
+	private void fillServers() {
+		String s = (String) jc_Group.getSelectedItem();
+		jc_Server.removeAllItems();
+		servers.removeAllElements();
+		for (int i = 0; i < g.getServerValues().size(); i++) {
+			String[] x = (String[]) g.getServerValues().get(i);
+			if (jc_Group.getSelectedIndex() <= 0 || x[0].equals(s)) {
+				servers.add(x);
+				jc_Server.addItem(x[1]);
+			}
+		}
+	}
+
+	private void editServer(String[] server) {
+		PIRCEditServer edit = new PIRCEditServer(this, reader);
+		edit.setGroups(g.getGroups());
+		edit.setServer(server);
+		edit.setLocationRelativeTo(this);
+		edit.setVisible(true);
+		if (edit.isSaved()) {
+			reloadServers(server == null
+				? (String[]) reader.getH().lastElement()
+				: server);
+		}
+	}
+
+	private void deleteServer() {
+		String[] server = getServer();
+		if (server == null) {
+			return;
+		}
+		int option =
+			JOptionPane.showConfirmDialog(
+				this,
+				"Deletar o servidor " + server[1] + "?",
+				"Deletar",
+				JOptionPane.YES_NO_OPTION);
+		if (option == JOptionPane.YES_OPTION) {
+			reader.getH().remove(server);
+			try {
+				reader.save();
+			} catch (IOException e) {
+				new PIRCExceptionWindow("Não foi possível salvar", e).show();
+			}
+			reloadServers(null);
+		}
 	}
 
 	public String getAlternative() {
@@ -341,13 +397,37 @@ public class PIRCConnectionWindow extends JDialog {
 		return nickname.getText();
 	}
 
-	public String getServer() {
-		return ""; //server.getText();
+	/**
+	 * Returns the selected server
+	 * @return { group, name, url, port } or null if no server is selected
+	 */
+	public String[] getServer() {
+		int index = jc_Server.getSelectedIndex();
+		if (index < 0 || index >= servers.size()) {
+			return null;
+		}
+		return (String[]) servers.get(index);
 	}
 
 	private void connectionEvent(ActionEvent e) {
-		pircFrame.connect(this);
+		if (getServer() == null) {
+			JOptionPane.showMessageDialog(
+				this,
+				"Selecione um servidor.",
+				getTitle(),
+				JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		if (getNickname().trim().length() == 0) {
+			JOptionPane.showMessageDialog(
+				this,
+				"Informe o NickName.",
+				getTitle(),
+				JOptionPane.WARNING_MESSAGE);
+			return;
+		}
 		dispose();
+		pircFrame.connect(this);
 	}
 
 	private final JLabel labela = new JLabel("Name: "),
@@ -355,7 +435,7 @@ public class PIRCConnectionWindow extends JDialog {
 		labelc = new JLabel("NickName: "),
 		labeld = new JLabel("Alternativo: ");
 	private final JTextField name = new JTextField("pIRC"),
-		email = new JTextField("seunome@@seuprovedor.com"),
+		email = new JTextField("seunome@seuprovedor.com"),
 		nickname = new JTextField("usuario_pIRC"),
 		alternative = new JTextField("usu_pIRC");
 	private final JPanel serverPanel = new JPanel(),
@@ -371,7 +451,8 @@ public class PIRCConnectionWindow extends JDialog {
 		new GridBagConstraints();
 	private final JPanel topImagePanel = new JPanel();
 	private final ImageIcon topImage =
-		new ImageIcon("org/aconstantino/pirc/images/connection_top.gif");
+		new ImageIcon(
+			PIRCConnectionWindow.class.getResource("images/connection_top.gif"));
 	private final JLabel sl_Group = new JLabel("Grupo");
 	private final JLabel sl_Server = new JLabel("Servidor");
 	private final JButton sb_Edit = new JButton("Editar");
@@ -382,6 +463,8 @@ public class PIRCConnectionWindow extends JDialog {
 	private final JComboBox jc_Group = new JComboBox();
 	private PIRCServersReader reader = new PIRCServersReader("cfg/servers.xml");
 	private Groups g;
+	private final Vector servers = new Vector();
+	private boolean reloading;
 
 }
 

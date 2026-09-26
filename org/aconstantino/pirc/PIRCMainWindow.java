@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@techie.com
+  * ziegfried@techie.com
   *
   */
 
@@ -40,7 +40,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  12:03:22 
  */
 public class PIRCMainWindow extends JInternalFrame {
@@ -68,9 +68,9 @@ public class PIRCMainWindow extends JInternalFrame {
 		tField.addKeyListener(new KeyAdapter() {
 			public void keyReleased(KeyEvent evt) {
 				if (evt.getKeyChar() == evt.VK_ENTER) {
-					try {
-						pircFrame.getIrcSocket().println(tField.getText());
-					} catch (IRCSocketException e) {
+					String echo = pircFrame.sendInput(null, tField.getText());
+					if (echo != null) {
+						append(echo);
 					}
 					tField.setText("");
 				}
@@ -85,6 +85,7 @@ public class PIRCMainWindow extends JInternalFrame {
 
 	public void append(String s) {
 		tMain.append(s + "\r\n");
+		tMain.setCaretPosition(tMain.getDocument().getLength());
 	}
 
 	private final JTextArea tMain = new JTextArea();

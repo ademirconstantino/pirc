@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 package org.aconstantino.pirc;
@@ -28,7 +28,7 @@ package org.aconstantino.pirc;
 import java.util.Hashtable;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 20/09/2002 -  12:34:24 
  */
 public class ChannelsHashTable extends Hashtable {

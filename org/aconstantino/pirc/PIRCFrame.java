@@ -30,6 +30,7 @@ import java.awt.dnd.DropTarget;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -40,7 +41,7 @@ import javax.swing.UIManager;
 
 /**
  * The main pIRC class
- * @@author Ademir Constantino Filho.
+ * @author Ademir Constantino Filho.
  */
 
 public class PIRCFrame extends JFrame {
@@ -53,7 +54,7 @@ public class PIRCFrame extends JFrame {
 	private void init() {
 		setIconImage(
 			Toolkit.getDefaultToolkit().createImage(
-				"org/aconstantino/pirc/images/icons/main.png"));
+				PIRCFrame.class.getResource("images/icons/main.png")));
 		connection = new PIRCConnectionWindow(this);
 		connection.init();
 		this.setContentPane(jdp);
@@ -84,12 +85,19 @@ public class PIRCFrame extends JFrame {
 	public void sendQuit(WindowEvent evt) {
 		if (connected) {
 			try {
-				ircSocket.writeln(
-					"QUIT :pIRC Version 0.7BETA Test By Ademir Constantino Filho");
+				ircSocket.writeln("QUIT :" + QUIT_MESSAGE);
 			} catch (IRCSocketException e) {
 				System.exit(0);
 			}
 		}
+	}
+
+	/**
+	 * Sends the quit message and exits pIRC
+	 */
+	public void exit() {
+		sendQuit(null);
+		System.exit(0);
 	}
 
 	private PIRCMenu pircMenu;
@@ -97,7 +105,7 @@ public class PIRCFrame extends JFrame {
 	public static void main(String[] args) {
 		try {
 			UIManager.setLookAndFeel(
-				"com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+				UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -109,21 +117,25 @@ public class PIRCFrame extends JFrame {
 	}
 
 	public void connect(PIRCConnectionWindow cw) {
-	//	String server = cw.getServer();
-		String server = "localhost";
-		if (!connected) {
+		String[] server = cw.getServer();
+		if (!connected && server != null) {
 			try {
+				pircMainWindow.append(
+					"-\r\nConectando a " + server[2] + " (" + server[3] + ")");
+				ident = new Identd("JAVA", cw.getNickname());
+				ident.start();
 				ircSocket = new IRCSocket();
-				ircSocket.setPort(6667);
-				ircSocket.setServer(server);
+				ircSocket.setPort(Integer.parseInt(server[3]));
+				ircSocket.setServer(server[2]);
 				ircSocket.setTimeOut(30000000);
 				ircSocket.connect();
-				startUp(cw);
-				ident = new Identd("ziegfried", "java");
 				connected = true;
 				pircMenu.switchConn();
-				ident.start();
+				startUp(cw);
 			} catch (Exception e) {
+				if (ident != null) {
+					ident.close();
+				}
 				new PIRCExceptionWindow("Não foi possível conectar", e).show();
 			}
 		}
@@ -132,7 +144,7 @@ public class PIRCFrame extends JFrame {
 	private void startUp(PIRCConnectionWindow cw) {
 		proHandle = new ProtocolHandler();
 		proHandle.setIrcsocket(ircSocket);
-		String nick = connection.getNickname();
+		String nick = connection.getNickname().trim();
 		this.setMyNickName(nick);
 		String name = connection.getName();
 		String email = connection.getEmail();
@@ -146,6 +158,57 @@ public class PIRCFrame extends JFrame {
 		proHandle.setPIRCFrame(this);
 		proHandle.setPIRCConnectionWindow(connection);
 		new Thread(proHandle).start();
+	}
+
+	/**
+	 * Sends the text typed by the user in a window.
+	 * Text starting with "/" is sent as an IRC command (/join #pirc),
+	 * other text is sent as a message to the target.
+	 * @param target the channel or nickname, null for the main window
+	 * @param text the typed text
+	 * @return the text to show in the window or null
+	 */
+	public String sendInput(String target, String text) {
+		if (text.trim().length() == 0) {
+			return null;
+		}
+		if (!connected) {
+			return "Não conectado";
+		}
+		try {
+			if (text.startsWith("/")) {
+				String cmd = text.substring(1);
+				String rest = "";
+				int space = cmd.indexOf(' ');
+				if (space > -1) {
+					rest = cmd.substring(space + 1);
+					cmd = cmd.substring(0, space);
+				}
+				cmd = cmd.toUpperCase();
+				if (cmd.equals("MSG") && rest.indexOf(' ') > -1) {
+					String to = rest.substring(0, rest.indexOf(' '));
+					String msg = rest.substring(rest.indexOf(' ') + 1);
+					ircSocket.println("PRIVMSG " + to + " :" + msg);
+					return "-> *" + to + "* " + msg;
+				} else if (cmd.equals("ME") && target != null) {
+					ircSocket.println(
+						"PRIVMSG " + target + " :\u0001ACTION " + rest + "\u0001");
+					return "* " + myNickName + " " + rest;
+				} else {
+					ircSocket.println(
+						rest.length() > 0 ? cmd + " " + rest : cmd);
+					return null;
+				}
+			} else if (target != null) {
+				ircSocket.println("PRIVMSG " + target + " :" + text);
+				return "> " + text;
+			} else {
+				ircSocket.println(text);
+				return null;
+			}
+		} catch (IRCSocketException e) {
+			return e.getMessage();
+		}
 	}
 
 	public PIRCMainWindow getMainWindow() {
@@ -177,11 +240,77 @@ public class PIRCFrame extends JFrame {
 		jdp.add((PIRCChannelWindow) process.get(channel.getName()));
 		jdp.setSelectedFrame(
 			(PIRCChannelWindow) process.get(channel.getName()));
-		channelsIn.add(channel.getName());
+		if (!channelsIn.contains(channel.getName())) {
+			channelsIn.add(channel.getName());
+		}
 	}
 
 	public PIRCChannelWindow getChannelWindow(Channel channel) {
 		return (PIRCChannelWindow) process.get(channel.getName());
+	}
+
+	/**
+	 * Removes the channel and its window from pIRC
+	 * @param channelName the channel name
+	 */
+	public void removeChannel(String channelName) {
+		PIRCChannelWindow window =
+			(PIRCChannelWindow) process.remove(channelName);
+		channels.removeChannel(channelName);
+		channelsIn.remove(channelName);
+		if (window != null && !window.isClosed()) {
+			window.dispose();
+		}
+	}
+
+	/**
+	 * Returns the private message window of a nickname
+	 * @param nickname the nickname
+	 * @param create create the window if it does not exist
+	 * @return the private message window or null
+	 */
+	public PrivateMessageSession getPrivateWindow(
+		String nickname,
+		boolean create) {
+		String key = nickname.toLowerCase();
+		PrivateMessageSession session =
+			(PrivateMessageSession) privates.get(key);
+		if (session == null && create) {
+			session = new PrivateMessageSession(nickname, this);
+			privates.put(key, session);
+			jdp.add(session);
+			jdp.setSelectedFrame(session);
+		}
+		return session;
+	}
+
+	/**
+	 * Removes the private message window of a nickname
+	 * @param nickname the nickname
+	 */
+	public void removePrivateWindow(String nickname) {
+		privates.remove(nickname.toLowerCase());
+	}
+
+	/**
+	 * Updates the private message window when the nickname changes
+	 */
+	public void renamePrivateWindow(String oldNick, String newNick) {
+		PrivateMessageSession session =
+			(PrivateMessageSession) privates.remove(oldNick.toLowerCase());
+		if (session != null) {
+			session.setNickname(newNick);
+			session.setTitle(newNick);
+			privates.put(newNick.toLowerCase(), session);
+			session.append(oldNick + " mudou o nick para " + newNick);
+		}
+	}
+
+	/**
+	 * Returns all opened private message windows
+	 */
+	public Enumeration getPrivateWindows() {
+		return privates.elements();
 	}
 
 	public boolean getProcess(Channel channel) {
@@ -206,6 +335,39 @@ public class PIRCFrame extends JFrame {
 	}
 
 	public void disconnect() {
+		if (connected) {
+			try {
+				ircSocket.close(QUIT_MESSAGE);
+			} catch (IRCSocketException e) {
+			}
+			onDisconnected();
+		}
+	}
+
+	/**
+	 * Called when the connection with the server is closed
+	 */
+	public void onDisconnected() {
+		if (!connected) {
+			return;
+		}
+		connected = false;
+		if (ident != null) {
+			ident.close();
+		}
+		Vector names = new Vector(process.keySet());
+		for (int i = 0; i < names.size(); i++) {
+			removeChannel((String) names.get(i));
+		}
+		Vector sessions = new Vector(privates.values());
+		for (int i = 0; i < sessions.size(); i++) {
+			((PrivateMessageSession) sessions.get(i)).dispose();
+		}
+		privates.clear();
+		channels.clear();
+		channelsIn.clear();
+		pircMenu.switchConn();
+		pircMainWindow.append("-\r\nDesconectado");
 	}
 
 	public boolean isConnected() {
@@ -221,6 +383,9 @@ public class PIRCFrame extends JFrame {
 	public boolean identOk;
 	private IRCSocket ircSocket;
 	private Hashtable process = new Hashtable();
+	private Hashtable privates = new Hashtable();
+	public static final String QUIT_MESSAGE =
+		"pIRC Version 0.7BETA Test By Ademir Constantino Filho";
 	private ProtocolHandler proHandle;
 	private Vector channelsIn = new Vector();
 	private String myNickName;

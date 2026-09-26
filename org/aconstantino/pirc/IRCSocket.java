@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 
@@ -35,8 +35,8 @@ import java.net.Socket;
 /**
  *
  * The irclib socket										
- * @@author Ziegfried Duhbe
- * @@version 0.2b
+ * @author Ziegfried Duhbe
+ * @version 0.2b
  */
 
 public class IRCSocket {
@@ -44,10 +44,10 @@ public class IRCSocket {
 	/**
 	 * Sets the timeOut attribute of the IRCSocket object
 	 * The time out for the socket, default value is 30000 ( 30 seconds )
-	 * @@param  setTimeOutSocket  The new timeOut value
-	 * @@see #setTimeOut
-	 * @@see #setServer
-	 * @@see #setPort
+	 * @param  setTimeOutSocket  The new timeOut value
+	 * @see #setTimeOut
+	 * @see #setServer
+	 * @see #setPort
 	 */
 
 	public void setTimeOut(int setTimeOutSocket) {
@@ -63,9 +63,9 @@ public class IRCSocket {
 	/**
 	 * Sets the serverPort attribute of the IRCSocket object
 	 * ( 6667 most popular port )
-	 * @@param  newPortValue Server Port
-	 * @@see #setTimeOut
-	 * @@see #setServer
+	 * @param  newPortValue Server Port
+	 * @see #setTimeOut
+	 * @see #setServer
 	 */
 
 	public void setPort(int newPortValue) {
@@ -80,9 +80,9 @@ public class IRCSocket {
 
 	/**
 	 * Sets the serverName attribute of the IRCSocket object
-	 * @@param  newServerValue Server addr String
-	 * @@see #setTimeOut
-	 * @@see #setPort
+	 * @param  newServerValue Server addr String
+	 * @see #setTimeOut
+	 * @see #setPort
 	 */
 
 	public void setServer(String newServerValue) {
@@ -98,7 +98,7 @@ public class IRCSocket {
 	/**
 	 * Constructor for the IRCSocket object
 	 *
-	 * @@param  setServerName  Constructor for the IRCSocket with serverName only
+	 * @param  setServerName  Constructor for the IRCSocket with serverName only
 	 */
 
 	public IRCSocket(String setServerName) {
@@ -113,9 +113,9 @@ public class IRCSocket {
 	/**
 	 * Constructor for the IRCSocket object
 	 *
-	 * @@param  setServerName  setServerName to connect
-	 * @@param  setServerPort  setServerPort to connect ( 6667 most popular port )
-	 * @@param  setTimeOut     setTimeOut value, the socket will be closed if servers does not respond in timeOut value
+	 * @param  setServerName  setServerName to connect
+	 * @param  setServerPort  setServerPort to connect ( 6667 most popular port )
+	 * @param  setTimeOut     setTimeOut value, the socket will be closed if servers does not respond in timeOut value
 	 */
 
 	public IRCSocket(String setServerName, int setServerPort, int setTimeOut) {
@@ -151,8 +151,8 @@ public class IRCSocket {
 	/**
 	 * Constructor for the IRCSocket object
 	 *
-	 * @@param  setServerName  setServerName to connect
-	 * @@param  setServerPort  setServerPort to connect ( 6667 most popular port )
+	 * @param  setServerName  setServerName to connect
+	 * @param  setServerPort  setServerPort to connect ( 6667 most popular port )
 	 */
 
 	public IRCSocket(String setServerName, int setServerPort) {
@@ -178,7 +178,7 @@ public class IRCSocket {
 	/**
 	 * Connect to the IRC Server 
 	 *
-	 * @@exception  IRCSocketException
+	 * @exception  IRCSocketException
 	 */
 	public void connect() throws IRCSocketException {
 		if (isCon) {
@@ -211,6 +211,7 @@ public class IRCSocket {
 
 		try {
 			this.setUpSocketStream();
+			isCon = true;
 		} catch (IOException e) {
 			throw new IRCSocketException(e.getMessage());
 		}
@@ -219,12 +220,14 @@ public class IRCSocket {
 	/**
 	 *  Close the IRCSocket
 	 *
-	 * @@exception  IRCSocketException  Description of the Exception
+	 * @exception  IRCSocketException  Description of the Exception
 	 */
 
 	public void close() throws IRCSocketException {
 		try {
-			socket.close();
+			if (socket != null) {
+				socket.close();
+			}
 			isCon = false;
 			isClosed = true;
 		} catch (IOException e) {
@@ -235,8 +238,8 @@ public class IRCSocket {
 	/**
 	 * Close IRCSocket sending a Quit message to IRC Server
 	 *
-	 * @@param  quitMessage             Quit Message ( Bye! )
-	 * @@exception  IRCSocketException 
+	 * @param  quitMessage             Quit Message ( Bye! )
+	 * @exception  IRCSocketException 
 	 */
 
 	public void close(String quitMessage) throws IRCSocketException {
@@ -270,8 +273,8 @@ public class IRCSocket {
 	/**
 	 * Gets the inputData attribute of the IRCSocket object
 	 *
-	 * @@return                         The inputData value
-	 * @@exception  IRCSocketException  Description of the Exception
+	 * @return                         The inputData value
+	 * @exception  IRCSocketException  Description of the Exception
 	 */
 
 	public String getInputData() throws IRCSocketException {
@@ -285,8 +288,8 @@ public class IRCSocket {
 	/**
 	 * Write String to server
 	 *
-	 * @@param  strWrite                String to send ( msg ? )
-	 * @@exception  IRCSocketException
+	 * @param  strWrite                String to send ( msg ? )
+	 * @exception  IRCSocketException
 	 */
 	public void write(String strWrite) throws IRCSocketException {
 		sockWriter.print(strWrite);
@@ -295,8 +298,8 @@ public class IRCSocket {
 	/**
 	 * Write String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
 	 *
-	 * @@param  strWrite                Description of the Parameter
-	 * @@exception  IRCSocketException  Description of the Exception
+	 * @param  strWrite                Description of the Parameter
+	 * @exception  IRCSocketException  Description of the Exception
 	 */
 
 	public void writeln(String strWrite) throws IRCSocketException {
@@ -306,8 +309,8 @@ public class IRCSocket {
 	/**
 	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
 	 *
-	 * @@param  strPrint            	Str to print
-	 * @@exception  IRCSocketException
+	 * @param  strPrint            	Str to print
+	 * @exception  IRCSocketException
 	 */
 
 	public void print(String strPrint) throws IRCSocketException {
@@ -317,8 +320,8 @@ public class IRCSocket {
 	/**
 	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
 	 *
-	 * @@param  strPrint                Str to print
-	 * @@exception  IRCSocketException
+	 * @param  strPrint                Str to print
+	 * @exception  IRCSocketException
 	 */
 
 	public void println(String strPrint) throws IRCSocketException {
@@ -328,7 +331,7 @@ public class IRCSocket {
 	/**
 	 * Gets the server attribute of the IRCSocket object
 	 *
-	 * @@return    Servername value
+	 * @return    Servername value
 	 */
 
 	public String getServer() {
@@ -338,7 +341,7 @@ public class IRCSocket {
 	/**
 	 * Gets the port attribute of the IRCSocket object
 	 *
-	 * @@return    Server port
+	 * @return    Server port
 	 */
 
 	public int getPort() {
@@ -348,7 +351,7 @@ public class IRCSocket {
 	/**
 	 * Gets the iRCSocketState attribute of the IRCSocket object
 	 *
-	 * @@return    The ircsocket state
+	 * @return    The ircsocket state
 	 */
 
 	public String getIRCSocketState() {
@@ -364,7 +367,7 @@ public class IRCSocket {
 	 * Gets the IRCSocket currtent state
 	 * if returns <code> true </code> it´s connected
 	 * if returns <code> false </code> it´s not connected
-	 * @@return    The connected <code> boolean </code> value
+	 * @return    The connected <code> boolean </code> value
 	 */
 
 	public boolean isConnected() {
@@ -375,7 +378,7 @@ public class IRCSocket {
 	 * Gets the IRCSocket configured value
 	 * if returns <code> true </code> the ircsocket it´s configured
 	 * if returns <code> false </code> the ircsocket it´s not configured
-	 * @@return    true if is configured false if not configured
+	 * @return    true if is configured false if not configured
 	 */
 
 	public boolean isConfiguredState() {
@@ -384,7 +387,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the isClosed.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isClosed() {
 		return isClosed;
@@ -392,7 +395,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the isCon.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isCon() {
 		return isCon;
@@ -400,7 +403,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the isConfigured.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isConfigured() {
 		return isConfigured;
@@ -408,7 +411,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the serverName.
-	 * @@return String
+	 * @return String
 	 */
 	public String getServerName() {
 		return serverName;
@@ -416,7 +419,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the serverNameConfigured.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isServerNameConfigured() {
 		return serverNameConfigured;
@@ -424,7 +427,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the serverPort.
-	 * @@return int
+	 * @return int
 	 */
 	public int getServerPort() {
 		return serverPort;
@@ -432,7 +435,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the serverPortConfigured.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isServerPortConfigured() {
 		return serverPortConfigured;
@@ -440,7 +443,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the socket.
-	 * @@return Socket
+	 * @return Socket
 	 */
 	public Socket getSocket() {
 		return socket;
@@ -448,7 +451,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the socketConfigured.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isSocketConfigured() {
 		return socketConfigured;
@@ -456,7 +459,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the sockReader.
-	 * @@return BufferedReader
+	 * @return BufferedReader
 	 */
 	public BufferedReader getSockReader() {
 		return sockReader;
@@ -464,7 +467,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the sockWriter.
-	 * @@return PrintWriter
+	 * @return PrintWriter
 	 */
 	public PrintStream getSockWriter() {
 		return sockWriter;
@@ -472,7 +475,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the timeOut.
-	 * @@return int
+	 * @return int
 	 */
 	public int getTimeOut() {
 		return timeOut;
@@ -480,7 +483,7 @@ public class IRCSocket {
 
 	/**
 	 * Returns the timeOutConfigured.
-	 * @@return boolean
+	 * @return boolean
 	 */
 	public boolean isTimeOutConfigured() {
 		return timeOutConfigured;

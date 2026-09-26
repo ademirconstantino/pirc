@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 
@@ -40,7 +40,7 @@ import javax.swing.JTextArea;
 import javax.swing.UIManager;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 19/09/2002 -  14:10:30 
  */
 public class PIRCExceptionWindow extends JDialog {
@@ -62,7 +62,9 @@ public class PIRCExceptionWindow extends JDialog {
 		topPanel.add(new JLabel(topImage), BorderLayout.NORTH);
 		getContentPane().add(topPanel, BorderLayout.NORTH);
 		detailsPanel.setLayout(new BorderLayout());
-		eDetails.setText(e.getMessage());
+		eDetails.setText(e.getMessage() != null ? e.getMessage() : e.toString());
+		eDetails.setEditable(false);
+		eDetails.setLineWrap(true);
 		detailsPanel.add(eDetails, BorderLayout.CENTER);
 		getContentPane().add(detailsPanel, BorderLayout.CENTER);
 		closePanel.setLayout(new BorderLayout());
@@ -89,6 +91,7 @@ public class PIRCExceptionWindow extends JDialog {
 		closePanel = new JPanel();
 	private final JButton close = new JButton("Close");
 	private final ImageIcon topImage =
-		new ImageIcon("org/aconstantino/pirc/images/exception_top.gif");
+		new ImageIcon(
+			PIRCExceptionWindow.class.getResource("images/exception_top.gif"));
 
 }

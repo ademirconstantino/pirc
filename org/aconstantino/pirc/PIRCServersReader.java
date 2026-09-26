@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 
@@ -29,7 +29,10 @@
 package org.aconstantino.pirc;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -50,7 +53,7 @@ public class PIRCServersReader extends DefaultHandler {
 
 	private void init() {
 		xmlFile = new File(fName);
-		spf.setValidating(true);
+		spf.setValidating(false);
 		try {
 			parser = spf.newSAXParser();
 		} catch (ParserConfigurationException e) {
@@ -84,6 +87,43 @@ public class PIRCServersReader extends DefaultHandler {
 
 	public Vector getH() {
 		return h;
+	}
+
+	/**
+	 * Saves the servers (group, name, url, port) to the xml file
+	 */
+	public void save() throws IOException {
+		PrintWriter out =
+			new PrintWriter(
+				new OutputStreamWriter(new FileOutputStream(xmlFile), "UTF-8"));
+		out.println("<?xml version='1.0'?>");
+		out.println("<servers>");
+		for (int i = 0; i < h.size(); i++) {
+			String[] s = (String[]) h.get(i);
+			out.println(
+				"<server url=\""
+					+ escape(s[2])
+					+ "\" port=\""
+					+ escape(s[3])
+					+ "\" group=\""
+					+ escape(s[0])
+					+ "\" name=\""
+					+ escape(s[1])
+					+ "\"/>");
+		}
+		out.println("</servers>");
+		out.close();
+		if (out.checkError()) {
+			throw new IOException("Error writing " + xmlFile);
+		}
+	}
+
+	private String escape(String s) {
+		return s
+			.replaceAll("&", "&amp;")
+			.replaceAll("\"", "&quot;")
+			.replaceAll("<", "&lt;")
+			.replaceAll(">", "&gt;");
 	}
 
 	public File getXmlFile() {

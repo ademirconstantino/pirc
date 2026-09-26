@@ -30,14 +30,14 @@ import java.net.Socket;
 
 /**
   *Basic Identd Server for connecting to IRC network
-  *@@author Ademir Constantino Filho
-  *@@since pIRC 0.1
+  *@author Ademir Constantino Filho
+  *@since pIRC 0.1
   */
 
 public class Identd extends Thread {
 
 	/**
-	 * @@return the version for this ident server
+	 * @return the version for this ident server
 	 */
 
 	public float getVersion() {
@@ -46,8 +46,8 @@ public class Identd extends Thread {
 
 	/**
 	 * Return the Connection State for this sever
-	 * @@return <code> true </code> if connected
-	 * @@return <code> false </code> if not connected
+	 * @return <code> true </code> if connected
+	 * @return <code> false </code> if not connected
 	 */
 
 	public boolean getConnectedState() {
@@ -56,7 +56,7 @@ public class Identd extends Thread {
 
 	/**
 	 * If the data was sent to server return <code> true </code>
-	 * @@return <code> true </code> if your ident data was sent to server
+	 * @return <code> true </code> if your ident data was sent to server
 	 */
 
 	public boolean wasSent() {
@@ -72,8 +72,8 @@ public class Identd extends Thread {
 
 	/**
 	 * The Ident Server constructor
-	 * @@param systemValue System (default java)
-	 * @@param userNameValue the username
+	 * @param systemValue System (default java)
+	 * @param userNameValue the username
 	 */
 
 	public Identd(String systemValue, String usernameValue) {
@@ -86,57 +86,36 @@ public class Identd extends Thread {
 		wSent = false;
 		this.system = systemValue;
 		this.username = usernameValue;
+		userId = "USERID";
+		setDaemon(true);
 	}
 
 	/**
-	 * Start the ident server
+	 * Waits for the ident request of the IRC server, answers it and closes
+	 * the ident server. Use <code>start()</code> to run it in background.
 	 */
 
-	public void start() {
-
-		userId = "USERID";
-		if (system == null) {
-			system = "JAVA";
-		}
-		if (username == null) {
-			username = "noUser";
-		}
+	public void run() {
 		try {
-			if (!connected) {
-				serversocket = new ServerSocket(port);
-				socket = serversocket.accept();
-				in =
-					new BufferedReader(
-						new InputStreamReader(socket.getInputStream()));
-				out = new PrintStream(socket.getOutputStream());
-				new Thread(this).start();
-				connected = true;
+			serversocket = new ServerSocket(port);
+			socket = serversocket.accept();
+			in =
+				new BufferedReader(
+					new InputStreamReader(socket.getInputStream()));
+			out = new PrintStream(socket.getOutputStream(), true);
+			connected = true;
+			sr = in.readLine();
+			if (sr != null) {
+				String sr2 =
+					sr.trim() + " : " + userId + " : " + system + " : " + username;
+				wSent = true;
+				out.print(sr2 + "\r\n");
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void run() {
-		if (connected) {
-			try {
-				sr = in.readLine();
-				if (sr != null) {
-					String sr2 =
-						sr + " : " + userId + " : " + system + " : " + username;
-					wSent = true;
-					out.println(sr2);
-					close();
-
-				}
-			} catch (IOException e) {
-				System.err.println(e);
-			}
-		}
-		try {
-			sleep(180000);
-		} catch (InterruptedException e) {
-			System.err.println(e);
+			// port 113 needs special privileges on most systems
+			System.err.println("Identd: " + e.getMessage());
+		} finally {
+			close();
 		}
 	}
 
@@ -146,21 +125,23 @@ public class Identd extends Thread {
 
 	public void close() {
 		try {
-			if (connected) {
+			connected = false;
+			if (out != null) {
 				out.close();
-				connected = false;
+			}
+			if (socket != null) {
 				socket.close();
+			}
+			if (serversocket != null) {
 				serversocket.close();
-				this.interrupt();
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
 	/**
 	 * Returns the system.
-	 * @@return String
+	 * @return String
 	 */
 	public String getSystem() {
 		return system;
@@ -168,7 +149,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Returns the userId.
-	 * @@return String
+	 * @return String
 	 */
 	public String getUserId() {
 		return userId;
@@ -176,7 +157,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Returns the username.
-	 * @@return String
+	 * @return String
 	 */
 	public String getUsername() {
 		return username;
@@ -184,7 +165,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Returns the versionInfo.
-	 * @@return float
+	 * @return float
 	 */
 	public float getVersionInfo() {
 		return versionInfo;
@@ -192,7 +173,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Sets the system.
-	 * @@param system The system to set
+	 * @param system The system to set
 	 */
 	public void setSystem(String system) {
 		this.system = system;
@@ -200,7 +181,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Sets the userId.
-	 * @@param userId The userId to set
+	 * @param userId The userId to set
 	 */
 	public void setUserId(String userId) {
 		this.userId = userId;
@@ -208,7 +189,7 @@ public class Identd extends Thread {
 
 	/**
 	 * Sets the username.
-	 * @@param username The username to set
+	 * @param username The username to set
 	 */
 	public void setUsername(String username) {
 		this.username = username;

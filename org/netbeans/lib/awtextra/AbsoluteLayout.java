@@ -18,8 +18,8 @@ import java.awt.*;
 /** AbsoluteLayout is a LayoutManager that works as a replacement for "null" layout to
 * allow placement of components in absolute positions.
 *
-* @@see AbsoluteConstraints
-* @@version 1.01, Aug 19, 1998
+* @see AbsoluteConstraints
+* @version 1.01, Aug 19, 1998
 */
 public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
     /** generated Serialized Version UID */
@@ -27,15 +27,15 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
 
     /** Adds the specified component with the specified name to
     * the layout.
-    * @@param name the component name
-    * @@param comp the component to be added
+    * @param name the component name
+    * @param comp the component to be added
     */
     public void addLayoutComponent(String name, Component comp) {
         throw new IllegalArgumentException();
     }
 
     /** Removes the specified component from the layout.
-    * @@param comp the component to be removed
+    * @param comp the component to be removed
     */
     public void removeLayoutComponent(Component comp) {
         constraints.remove(comp);
@@ -43,9 +43,9 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
 
     /** Calculates the preferred dimension for the specified
     * panel given the components in the specified parent container.
-    * @@param parent the component to be laid out
+    * @param parent the component to be laid out
     *
-    * @@see #minimumLayoutSize
+    * @see #minimumLayoutSize
     */
     public Dimension preferredLayoutSize(Container parent) {
         int maxWidth = 0;
@@ -70,8 +70,8 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
 
     /** Calculates the minimum dimension for the specified
     * panel given the components in the specified parent container.
-    * @@param parent the component to be laid out
-    * @@see #preferredLayoutSize
+    * @param parent the component to be laid out
+    * @see #preferredLayoutSize
     */
     public Dimension minimumLayoutSize(Container parent) {
         int maxWidth = 0;
@@ -96,7 +96,7 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
     }
 
     /** Lays out the container in the specified panel.
-    * @@param parent the component which needs to be laid out
+    * @param parent the component which needs to be laid out
     */
     public void layoutContainer(Container parent) {
         for (java.util.Enumeration e = constraints.keys(); e.hasMoreElements();) {
@@ -114,8 +114,8 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
 
     /** Adds the specified component to the layout, using the specified
     * constraint object.
-    * @@param comp the component to be added
-    * @@param constr  where/how the component is added to the layout.
+    * @param comp the component to be added
+    * @param constr  where/how the component is added to the layout.
     */
     public void addLayoutComponent(Component comp, Object constr) {
         if (!(constr instanceof AbsoluteConstraints))
@@ -124,9 +124,9 @@ public class AbsoluteLayout implements LayoutManager2, java.io.Serializable {
     }
 
     /** Returns the maximum size of this component.
-    * @@see java.awt.Component#getMinimumSize()
-    * @@see java.awt.Component#getPreferredSize()
-    * @@see LayoutManager
+    * @see java.awt.Component#getMinimumSize()
+    * @see java.awt.Component#getPreferredSize()
+    * @see LayoutManager
     */
     public Dimension maximumLayoutSize(Container target) {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);

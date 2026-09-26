@@ -29,7 +29,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  11:39:32 
  */
 public class PIRCMenu extends JMenuBar {
@@ -42,11 +42,11 @@ public class PIRCMenu extends JMenuBar {
 
 	public void switchConn() {
 		if (pircFrame.isConnected()) {
-			connect.setText("Disconnect");
+			connect.setText("Desconectar");
 			connect.removeActionListener(connection);
 			connect.addActionListener(disconnection);
 		} else {
-			connect.setText("Connect");
+			connect.setText("Conectar");
 			connect.removeActionListener(disconnection);
 			connect.addActionListener(connection);
 		}
@@ -72,6 +72,11 @@ public class PIRCMenu extends JMenuBar {
 		connect.addActionListener(connection);
 		options = new JMenuItem("Opções");
 		exit = new JMenuItem("Sair");
+		exit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				pircFrame.exit();
+			}
+		});
 		initMenuFile();
 		send = new JMenuItem("Enviar");
 		chat = new JMenuItem("Chat");

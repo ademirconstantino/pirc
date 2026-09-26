@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 
@@ -31,9 +31,8 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.beans.PropertyVetoException;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -51,7 +50,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 20/09/2002 -  18:37:37 
  */
 public class PIRCChannelWindow
@@ -122,17 +121,19 @@ public class PIRCChannelWindow
 		tField.addKeyListener(new KeyAdapter() {
 			public void keyReleased(KeyEvent evt) {
 				if (evt.getKeyChar() == evt.VK_ENTER) {
-					try {
-						pircFrame.getIrcSocket().write(
-							"PRIVMSG "
-								+ channel.getName()
-								+ " :"
-								+ tField.getText()
-								+ "\r\n");
-					append("> "+tField.getText());
-					} catch (IRCSocketException e) {
+					String echo =
+						pircFrame.sendInput(channel.getName(), tField.getText());
+					if (echo != null) {
+						append(echo);
 					}
 					tField.setText("");
+				}
+			}
+		});
+		nicks.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent evt) {
+				if (evt.getClickCount() == 2) {
+					openPrivate();
 				}
 			}
 		});
@@ -147,15 +148,34 @@ public class PIRCChannelWindow
 	}
 
 	public void sair(InternalFrameEvent evt) {
-		try {
-			pircFrame.getIrcSocket().println("PART " + channel.getName());
-			pircFrame.getChannels().removeChannel(channel.getName());
-		} catch (IRCSocketException e) {
+		if (pircFrame.isConnected()
+			&& pircFrame.getChannelWindow(channel) == this) {
+			try {
+				pircFrame.getIrcSocket().println("PART " + channel.getName());
+			} catch (IRCSocketException e) {
+			}
+		}
+		if (pircFrame.getChannelWindow(channel) == this) {
+			pircFrame.removeChannel(channel.getName());
+		}
+	}
+
+	/**
+	 * Opens a private message window with the selected nickname
+	 */
+	private void openPrivate() {
+		Object selected = nicks.getSelectedValue();
+		if (selected != null) {
+			String nick = NickNameList.stripStatus((String) selected);
+			if (!nick.equals(pircFrame.getMyNickName())) {
+				pircFrame.getPrivateWindow(nick, true);
+			}
 		}
 	}
 
 	public void append(String str) {
 		tMain.append(getTimeStamp() + "  " + str + "\r\n");
+		tMain.setCaretPosition(tMain.getDocument().getLength());
 	}
 
 	public String getTimeStamp() {

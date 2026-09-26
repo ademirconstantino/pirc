@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 
@@ -40,9 +40,11 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 28/09/2002 -  12:21:09 
  */
 public class PrivateMessageSession extends JInternalFrame {
@@ -72,22 +74,22 @@ public class PrivateMessageSession extends JInternalFrame {
 		tField.addKeyListener(new KeyAdapter() {
 			public void keyReleased(KeyEvent evt) {
 				if (evt.getKeyChar() == evt.VK_ENTER) {
-					try {
-						pircFrame.getIrcSocket().write(
-							"PRIVMSG "
-								+ nickname
-								+ " :"
-								+ tField.getText()
-								+ "\r\n");
-						append("> " + tField.getText());
-					} catch (IRCSocketException e) {
+					String echo = pircFrame.sendInput(nickname, tField.getText());
+					if (echo != null) {
+						append(echo);
 					}
 					tField.setText("");
 				}
 			}
 		});
+		addInternalFrameListener(new InternalFrameAdapter() {
+			public void internalFrameClosed(InternalFrameEvent evt) {
+				pircFrame.removePrivateWindow(nickname);
+			}
+		});
 
 		setResizable(true);
+		setClosable(true);
 		setMaximizable(true);
 		setIconifiable(true);
 		setSize(400, 400);
@@ -96,6 +98,7 @@ public class PrivateMessageSession extends JInternalFrame {
 
 	public void append(String str) {
 		tMain.append(getTimeStamp() + "  " + str + "\r\n");
+		tMain.setCaretPosition(tMain.getDocument().getLength());
 	}
 
 	public String getTimeStamp() {
@@ -110,7 +113,7 @@ public class PrivateMessageSession extends JInternalFrame {
 
 	/**
 	 * Returns the nickname.
-	 * @@return String
+	 * @return String
 	 */
 	public String getNickname() {
 		return nickname;
@@ -118,7 +121,7 @@ public class PrivateMessageSession extends JInternalFrame {
 
 	/**
 	 * Sets the nickname.
-	 * @@param nickname The nickname to set
+	 * @param nickname The nickname to set
 	 */
 	public void setNickname(String nickname) {
 		this.nickname = nickname;

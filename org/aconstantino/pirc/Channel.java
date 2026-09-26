@@ -20,7 +20,7 @@
   * 02111-1307, USA.
   *
   * Você pode entrar em contato pelo endereço de email:
-  * ziegfried@@onda.com.br
+  * ziegfried@onda.com.br
   *
   */
 package org.aconstantino.pirc;
@@ -28,7 +28,7 @@ package org.aconstantino.pirc;
 import java.util.Vector;
 
 /**
- * @@author Ademir Constantino Filho <a href="mailto:ziegfried@@techie.com">ziegfried@@techie.com</a>
+ * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  11:22:03 
  */
 
@@ -53,7 +53,7 @@ public class Channel {
 
 	/**
 	 * Returns the modes.
-	 * @@return String
+	 * @return String
 	 */
 	public String getModes() {
 		return modes;
@@ -61,7 +61,7 @@ public class Channel {
 
 	/**
 	 * Returns the name.
-	 * @@return String
+	 * @return String
 	 */
 	public String getName() {
 		return name;
@@ -69,7 +69,7 @@ public class Channel {
 
 	/**
 	 * Returns the topic.
-	 * @@return String
+	 * @return String
 	 */
 	public String getTopic() {
 		return topic;
@@ -77,7 +77,7 @@ public class Channel {
 
 	/**
 	 * Sets the modes.
-	 * @@param modes The modes to set
+	 * @param modes The modes to set
 	 */
 	public void setModes(String modes) {
 		this.modes = modes;
@@ -85,7 +85,7 @@ public class Channel {
 
 	/**
 	 * Sets the name.
-	 * @@param name The name to set
+	 * @param name The name to set
 	 */
 	public void setName(String name) {
 		this.name = name;
@@ -93,7 +93,7 @@ public class Channel {
 
 	/**
 	 * Sets the topic.
-	 * @@param topic The topic to set
+	 * @param topic The topic to set
 	 */
 	public void setTopic(String topic) {
 		this.topic = topic;
@@ -104,7 +104,7 @@ public class Channel {
 
 	/**
 	 * Returns the nickList.
-	 * @@return NickNameList
+	 * @return NickNameList
 	 */
 	public NickNameList getNickList() {
 		return nickList;
@@ -113,7 +113,7 @@ public class Channel {
 
 	/**
 	 * Sets the nickList.
-	 * @@param nickList The nickList to set
+	 * @param nickList The nickList to set
 	 */
 	public void setNickList(NickNameList nickList) {
 		this.nickList = nickList;

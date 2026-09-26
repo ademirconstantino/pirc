@@ -27,8 +27,8 @@ import java.io.IOException;
 /**
   * IRCSocket Exception
   *
-  *@@author Ademir Constantino Filho
-  *@@since pIRC 0.1
+  *@author Ademir Constantino Filho
+  *@since pIRC 0.1
   */
 
 

@@ -19,8 +19,8 @@ import java.awt.Point;
 /** An object that encapsulates position and (optionally) size for
 * Absolute positioning of components.
 *
-* @@see AbsoluteLayout
-* @@version 1.01, Aug 19, 1998
+* @see AbsoluteLayout
+* @version 1.01, Aug 19, 1998
 */
 public class AbsoluteConstraints implements java.io.Serializable {
     /** generated Serialized Version UID */
@@ -36,15 +36,15 @@ public class AbsoluteConstraints implements java.io.Serializable {
     public int height = -1;
 
     /** Creates a new AbsoluteConstraints for specified position.
-    * @@param pos The position to be represented by this AbsoluteConstraints
+    * @param pos The position to be represented by this AbsoluteConstraints
     */
     public AbsoluteConstraints(Point pos) {
         this (pos.x, pos.y);
     }
 
     /** Creates a new AbsoluteConstraints for specified position.
-    * @@param x The X position to be represented by this AbsoluteConstraints
-    * @@param y The Y position to be represented by this AbsoluteConstraints
+    * @param x The X position to be represented by this AbsoluteConstraints
+    * @param y The Y position to be represented by this AbsoluteConstraints
     */
     public AbsoluteConstraints(int x, int y) {
         this.x = x;
@@ -52,8 +52,8 @@ public class AbsoluteConstraints implements java.io.Serializable {
     }
 
     /** Creates a new AbsoluteConstraints for specified position and size.
-    * @@param pos  The position to be represented by this AbsoluteConstraints
-    * @@param size The size to be represented by this AbsoluteConstraints or null
+    * @param pos  The position to be represented by this AbsoluteConstraints
+    * @param size The size to be represented by this AbsoluteConstraints or null
     *             if the component's preferred size should be used
     */
     public AbsoluteConstraints(Point pos, Dimension size) {
@@ -66,11 +66,11 @@ public class AbsoluteConstraints implements java.io.Serializable {
     }
 
     /** Creates a new AbsoluteConstraints for specified position and size.
-    * @@param x      The X position to be represented by this AbsoluteConstraints
-    * @@param y      The Y position to be represented by this AbsoluteConstraints
-    * @@param width  The width to be represented by this AbsoluteConstraints or -1 if the 
+    * @param x      The X position to be represented by this AbsoluteConstraints
+    * @param y      The Y position to be represented by this AbsoluteConstraints
+    * @param width  The width to be represented by this AbsoluteConstraints or -1 if the 
     *               component's preferred width should be used  
-    * @@param height The height to be represented by this AbsoluteConstraints or -1 if the
+    * @param height The height to be represented by this AbsoluteConstraints or -1 if the
     *               component's preferred height should be used  
     */
     public AbsoluteConstraints(int x, int y, int width, int height) {
@@ -80,24 +80,24 @@ public class AbsoluteConstraints implements java.io.Serializable {
         this.height = height;
     }
 
-    /** @@return The X position represented by this AbsoluteConstraints */
+    /** @return The X position represented by this AbsoluteConstraints */
     public int getX () {
         return x;
     }
 
-    /** @@return The Y position represented by this AbsoluteConstraints */
+    /** @return The Y position represented by this AbsoluteConstraints */
     public int getY () {
         return y;
     }
 
-    /** @@return The width represented by this AbsoluteConstraints or -1 if the
+    /** @return The width represented by this AbsoluteConstraints or -1 if the
     * component's preferred width should be used 
     */
     public int getWidth () {
         return width;
     }
 
-    /** @@return The height represented by this AbsoluteConstraints or -1 if the
+    /** @return The height represented by this AbsoluteConstraints or -1 if the
     * component's preferred height should be used 
     */
     public int getHeight () {

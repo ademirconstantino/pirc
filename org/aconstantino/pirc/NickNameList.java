@@ -27,16 +27,16 @@ import java.util.Vector;
   * This object consists of maintaining the nicknames contained in a Channel,
   * methods to organize them and to maintain them well in way structured.
   *
-  * @@author Ademir Constantino Filho
-  * @@since pIRC 0.1
-  * @@version 0.1
+  * @author Ademir Constantino Filho
+  * @since pIRC 0.1
+  * @version 0.1
   */
 
 public class NickNameList extends Vector {
 
 	/**
 	 * Add a nickName to the NickNameList 
-	 * @@param nick The NickName String to be added
+	 * @param nick The NickName String to be added
 	 */
 
 	public void addNickName(String nick) {
@@ -45,23 +45,74 @@ public class NickNameList extends Vector {
 
 	/**
 	 * Replace a nickName to the NickNameList 
-	 * @@param oldNickName The 'OLD' NickName String to be removed from vector
-	 * @@param newNickName The 'NEW' NickName String to be added to vector
+	 * @param oldNickName The 'OLD' NickName String to be removed from vector
+	 * @param newNickName The 'NEW' NickName String to be added to vector
 	 */
 
 	public void updateNickName(String oldNickName, String newNickName) {
-		this.removeNickname(oldNickName);
-		this.addNickName(newNickName);
+		int index = this.indexOfNickName(oldNickName);
+		if (index == -1) {
+			return;
+		}
+		String old = (String) this.get(index);
+		this.removeElementAt(index);
+		this.addNickName(getStatus(old) + newNickName);
 		this.organizeByStatus();
 	}
 
 	/**
 	 * Remove a nickName from the NickList Vector.
-	 * @@param nick Nickname String to remove
+	 * @param nick Nickname String to remove
 	 */
 
 	public void removeNickname(String nick) {
-		this.removeElement(nick);
+		int index = this.indexOfNickName(nick);
+		if (index > -1) {
+			this.removeElementAt(index);
+		}
+	}
+
+	/**
+	 * Checks if the nickname is in the list, ignoring the status (@ or +)
+	 * @param nick Nickname String
+	 * @return <code> true </code> if the nickname is in the list
+	 */
+
+	public boolean containsNickName(String nick) {
+		return this.indexOfNickName(nick) > -1;
+	}
+
+	/**
+	 * Returns the index of a nickname, ignoring the status (@ or +)
+	 * @param nick Nickname String
+	 * @return the index or -1 if not found
+	 */
+
+	public int indexOfNickName(String nick) {
+		String clean = stripStatus(nick);
+		for (int i = 0; i < this.size(); i++) {
+			if (stripStatus((String) this.get(i)).equalsIgnoreCase(clean)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Removes the status (@ or +) from the nickname
+	 * @param nick Nickname String
+	 * @return the nickname without status
+	 */
+
+	public static String stripStatus(String nick) {
+		return nick.substring(getStatus(nick).length());
+	}
+
+	private static String getStatus(String nick) {
+		if (nick.startsWith("@") || nick.startsWith("+")) {
+			return nick.substring(0, 1);
+		}
+		return "";
 	}
 
 	/**
@@ -83,7 +134,7 @@ public class NickNameList extends Vector {
 		/* Parse values */
 		for (int i = 0; i < (int) this.size(); i++) {
 			curr = (String) this.get(i);
-			if (curr.startsWith("@@")) {
+			if (curr.startsWith("@")) {
 				temporary.addElement(curr);
 			} else if (curr.startsWith("+")) {
 				temporaryb.addElement(curr);
