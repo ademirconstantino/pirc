@@ -79,7 +79,7 @@ public final class PIRCFrame extends JFrame {
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 		setSize(1000, 780);
 		setLocation(screen.width / 6, screen.height / 6);
-		pircMainWindow.setSize(getSize());
+		pircMainWindow.setSize(getWidth(), 500);
 		try {
 			pircMainWindow.setSelected(true);
 		} catch (PropertyVetoException e) {
