@@ -58,7 +58,7 @@ public final class PIRCConnectionWindow extends JDialog {
 	public PIRCConnectionWindow(PIRCFrame pircFrame) {
 		super(pircFrame, "Conexão");
 		this.pircFrame = pircFrame;
-		setSize(456, 320);
+		setSize(456, 325);
 
 		JButton connect = new JButton("Conectar");
 		JButton cancel = new JButton("Cancelar");
