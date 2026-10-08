@@ -67,6 +67,9 @@
             <manifest>
               <mainClass>org.aconstantino.pirc.PIRCFrame</mainClass>
             </manifest>
+            <manifestEntries>
+              <SplashScreen-Image>org/aconstantino/pirc/images/splash.gif</SplashScreen-Image>
+            </manifestEntries>
           </archive>
         </configuration>
       </plugin>

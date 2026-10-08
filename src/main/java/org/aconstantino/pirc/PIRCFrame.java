@@ -23,6 +23,7 @@ package org.aconstantino.pirc;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.SplashScreen;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -53,6 +54,9 @@ public final class PIRCFrame extends JFrame {
 	public static final String QUIT_MESSAGE =
 		"pIRC Version " + VERSION + " Test By Ademir Constantino Filho";
 
+	/** Minimum time the splash is shown, in milliseconds */
+	private static final long SPLASH_TIME = 1500;
+
 	public PIRCFrame() {
 		super("pIRC");
 		setIconImage(
@@ -73,7 +77,7 @@ public final class PIRCFrame extends JFrame {
 		jdp.setBackground(Color.GRAY);
 		jdp.add(pircMainWindow);
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-		setSize(600, 400);
+		setSize(800, 600);
 		setLocation(screen.width / 6, screen.height / 6);
 		pircMainWindow.setSize(getSize());
 		try {
@@ -84,6 +88,15 @@ public final class PIRCFrame extends JFrame {
 	}
 
 	public static void main(String[] args) {
+		/* the splash (SplashScreen-Image in the jar manifest) closes when
+		   the main window is shown, keep it visible for a moment */
+		if (SplashScreen.getSplashScreen() != null) {
+			try {
+				Thread.sleep(SPLASH_TIME);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
 		SwingUtilities.invokeLater(() -> {
 			try {
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
