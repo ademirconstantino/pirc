@@ -1,8 +1,8 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
-  * 
+  *
   * Copyright (C) 2002 -  Ademir Constantino Filho
-  * 
+  *
   * Este programa é software livre; você pode redistribuí-lo e/ou
   * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
   * publicada pela Free Software Foundation; tanto a versão 2 da
@@ -25,40 +25,48 @@
   */
 package org.aconstantino.pirc;
 
-import java.util.Hashtable;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
+ * The channels pIRC has joined, by name
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
- * 20/09/2002 -  12:34:24 
+ * 20/09/2002 -  12:34:24
  */
-public class ChannelsHashTable extends Hashtable {
+public final class Channels {
 
-	public ChannelsHashTable(PIRCFrame pirc) {
-		this.pirc = pirc;
+	public void put(Channel channel) {
+		channels.put(channel.getName(), channel);
 	}
 
-	public void putChannel(Channel channel) {
-		String name = channel.getName();
-		put(name, channel);
+	public boolean contains(String channelName) {
+		return channels.containsKey(channelName);
 	}
 
-	public boolean getChannelExists(String channelName) {
-		Channel ch = (Channel) get(channelName);
-		boolean exists = false;
-		if (ch != null) {
-			exists = true;
-		}
-		return exists;
+	/**
+	 * @return the channel or null if pIRC is not in the channel
+	 */
+	public Channel get(String channelName) {
+		return channels.get(channelName);
 	}
 
-	public Channel getChannel(String channelName) {
-		return (Channel) get(channelName);
+	public void remove(String channelName) {
+		channels.remove(channelName);
 	}
 
-	public void removeChannel(String channelName) {
-		remove(channelName);
+	public void clear() {
+		channels.clear();
 	}
 
-	private PIRCFrame pirc;
+	/**
+	 * @return a copy of the channels, in the order they were joined
+	 */
+	public Collection<Channel> all() {
+		return List.copyOf(channels.values());
+	}
+
+	private final Map<String, Channel> channels = new LinkedHashMap<>();
 
 }

@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -27,8 +27,7 @@
 package org.aconstantino.pirc;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Window;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -37,61 +36,53 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
-import javax.swing.UIManager;
 
 /**
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 19/09/2002 -  14:10:30 
  */
-public class PIRCExceptionWindow extends JDialog {
+public final class PIRCExceptionWindow extends JDialog {
 
-	public PIRCExceptionWindow(String title, Exception e) {
-		this.title = title;
-		this.e = e;
-		init();
+	/**
+	 * Shows the error in a modal dialog
+	 * @param owner the window the dialog is shown over, can be null
+	 * @param title the dialog title
+	 * @param e the error
+	 */
+	public static void showError(Window owner, String title, Exception e) {
+		new PIRCExceptionWindow(owner, title, e).setVisible(true);
 	}
 
-	private void init() {
-		setTitle(title);
-		setModal(true);
+	private PIRCExceptionWindow(Window owner, String title, Exception e) {
+		super(owner, title, ModalityType.APPLICATION_MODAL);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setResizable(false);
-		setTitle(title);
 		setSize(300, 200);
-		topPanel.setLayout(new BorderLayout());
+
+		JPanel topPanel = new JPanel(new BorderLayout());
 		topPanel.add(new JSeparator());
-		topPanel.add(new JLabel(topImage), BorderLayout.NORTH);
+		topPanel.add(
+			new JLabel(
+				new ImageIcon(
+					PIRCExceptionWindow.class.getResource("images/exception_top.gif"))),
+			BorderLayout.NORTH);
 		getContentPane().add(topPanel, BorderLayout.NORTH);
-		detailsPanel.setLayout(new BorderLayout());
-		eDetails.setText(e.getMessage() != null ? e.getMessage() : e.toString());
-		eDetails.setEditable(false);
-		eDetails.setLineWrap(true);
-		detailsPanel.add(eDetails, BorderLayout.CENTER);
-		getContentPane().add(detailsPanel, BorderLayout.CENTER);
-		closePanel.setLayout(new BorderLayout());
+
+		JTextArea details =
+			new JTextArea(e.getMessage() != null ? e.getMessage() : e.toString());
+		details.setEditable(false);
+		details.setLineWrap(true);
+		details.setWrapStyleWord(true);
+		getContentPane().add(details, BorderLayout.CENTER);
+
+		JButton close = new JButton("Fechar");
+		close.addActionListener(evt -> dispose());
+		JPanel closePanel = new JPanel(new BorderLayout());
 		closePanel.add(new JSeparator(), BorderLayout.NORTH);
-		close.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				close();
-			}
-		});
 		closePanel.add(close, BorderLayout.SOUTH);
 		getContentPane().add(closePanel, BorderLayout.SOUTH);
+		getRootPane().setDefaultButton(close);
+		setLocationRelativeTo(owner);
 	}
-
-	private void close() {
-		this.removeAll();
-		dispose();
-	}
-
-	private final String title;
-	private final Exception e;
-	private final JTextArea eDetails = new JTextArea();
-	private final JPanel detailsPanel = new JPanel(),
-		topPanel = new JPanel(),
-		closePanel = new JPanel();
-	private final JButton close = new JButton("Close");
-	private final ImageIcon topImage =
-		new ImageIcon(
-			PIRCExceptionWindow.class.getResource("images/exception_top.gif"));
 
 }

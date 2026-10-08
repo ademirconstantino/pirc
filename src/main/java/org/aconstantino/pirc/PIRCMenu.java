@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )
@@ -22,8 +22,6 @@
 
 package org.aconstantino.pirc;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -32,90 +30,48 @@ import javax.swing.JMenuItem;
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  11:39:32 
  */
-public class PIRCMenu extends JMenuBar {
+public final class PIRCMenu extends JMenuBar {
 
 	public PIRCMenu(PIRCConnectionWindow conWindow, PIRCFrame pircFrame) {
-		this.conWindow = conWindow;
-		this.pircFrame = pircFrame;
-		init();
-	}
-
-	public void switchConn() {
-		if (pircFrame.isConnected()) {
-			connect.setText("Desconectar");
-			connect.removeActionListener(connection);
-			connect.addActionListener(disconnection);
-		} else {
-			connect.setText("Conectar");
-			connect.removeActionListener(disconnection);
-			connect.addActionListener(connection);
-		}
-	}
-
-	private void init() {
-
-		connect = new JMenuItem("Conectar");
-
-		connection = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				conWindow.show();
-			}
-		};
-
-		disconnection = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		connect.addActionListener(e -> {
+			if (pircFrame.isConnected()) {
 				pircFrame.disconnect();
-
-			}
-		};
-
-		connect.addActionListener(connection);
-		options = new JMenuItem("Opções");
-		exit = new JMenuItem("Sair");
-		exit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				pircFrame.exit();
+			} else {
+				conWindow.setLocationRelativeTo(pircFrame);
+				conWindow.setVisible(true);
 			}
 		});
-		initMenuFile();
-		send = new JMenuItem("Enviar");
-		chat = new JMenuItem("Chat");
-		dccOptions = new JMenuItem("Opções de DCC");
-		initMenuDcc();
-		addToMenu();
-	}
+		exit.addActionListener(e -> pircFrame.exit());
+		/* not implemented yet */
+		options.setEnabled(false);
+		send.setEnabled(false);
+		chat.setEnabled(false);
+		dccOptions.setEnabled(false);
 
-	private void initMenuFile() {
-		menuFile = new JMenu("Arquivo");
+		JMenu menuFile = new JMenu("Arquivo");
 		menuFile.add(connect);
 		menuFile.add(options);
 		menuFile.add(exit);
-	}
-
-	private void initMenuDcc() {
-		menuDcc = new JMenu("DCC");
+		JMenu menuDcc = new JMenu("DCC");
 		menuDcc.add(send);
 		menuDcc.add(chat);
 		menuDcc.add(dccOptions);
+		add(menuFile);
+		add(menuDcc);
 	}
 
-	private void addToMenu() {
-		this.add(menuFile);
-		this.add(menuDcc);
+	/**
+	 * Updates the connect item after a connection or disconnection
+	 * @param connected the connection state
+	 */
+	public void switchConn(boolean connected) {
+		connect.setText(connected ? "Desconectar" : "Conectar");
 	}
 
-	private JMenu menuFile;
-	private JMenuItem connect;
-	private JMenuItem options;
-	private JMenuItem exit;
-
-	private JMenu menuDcc;
-	private JMenuItem send;
-	private JMenuItem chat;
-	private JMenuItem dccOptions;
-
-	private PIRCConnectionWindow conWindow;
-	private PIRCFrame pircFrame;
-	private ActionListener connection;
-	private ActionListener disconnection;
+	private final JMenuItem connect = new JMenuItem("Conectar");
+	private final JMenuItem options = new JMenuItem("Opções");
+	private final JMenuItem exit = new JMenuItem("Sair");
+	private final JMenuItem send = new JMenuItem("Enviar");
+	private final JMenuItem chat = new JMenuItem("Chat");
+	private final JMenuItem dccOptions = new JMenuItem("Opções de DCC");
 }

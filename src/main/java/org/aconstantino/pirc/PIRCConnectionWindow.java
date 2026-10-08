@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -31,10 +31,10 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Vector;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -45,288 +45,148 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
 /**
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  14:33:27 
  */
-public class PIRCConnectionWindow extends JDialog {
+public final class PIRCConnectionWindow extends JDialog {
+
+	private static final String ALL_GROUPS = "all";
 
 	public PIRCConnectionWindow(PIRCFrame pircFrame) {
+		super(pircFrame, "Conexão");
 		this.pircFrame = pircFrame;
-	}
-
-	public void init() {
-		getContentPane().setLayout(new BorderLayout());
 		setSize(456, 320);
-		initServers();
-		//setModal(true);
-		setTitle("Conexão");
-		northCenter.setLayout(new BorderLayout());
-		connect.setSize(150, 40);
-		connect.setSize(150, 40);
-		southPanel.setLayout(new BorderLayout());
-		conPanel.setLayout(new FlowLayout());
+
+		JButton connect = new JButton("Conectar");
+		JButton cancel = new JButton("Cancelar");
+		connect.addActionListener(e -> connectionEvent());
+		cancel.addActionListener(e -> dispose());
+		getRootPane().setDefaultButton(connect);
+
+		JPanel mainPanel = new JPanel(new GridBagLayout());
+		addRow(mainPanel, 1, "Name: ", name);
+		addRow(mainPanel, 2, "Email: ", email);
+		addRow(mainPanel, 3, "NickName: ", nickname);
+		addRow(mainPanel, 4, "Alternativo: ", alternative);
+		mainPanel.add(
+			createServerPanel(),
+			new GridBagConstraints(
+				0, 5, GridBagConstraints.REMAINDER, GridBagConstraints.REMAINDER,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+
+		JPanel topImagePanel = new JPanel(new BorderLayout());
+		topImagePanel.add(
+			new JLabel(
+				new ImageIcon(
+					PIRCConnectionWindow.class.getResource("images/connection_top.gif"))),
+			BorderLayout.NORTH);
+		topImagePanel.add(new JSeparator());
+
+		JPanel conPanel = new JPanel(new FlowLayout());
 		conPanel.add(connect);
 		conPanel.add(cancel);
-		connect.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				connectionEvent(e);
-			}
-		});
-		mainPanel.setLayout(defaultLayout);
-		cancel.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				dispose();
-			}
-		});
-
-		initServerPanel();
-
-		mainPanel.add(
-			labela,
-			new GridBagConstraints(
-				0,
-				1,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0),
-				0,
-				0));
-		mainPanel.add(
-			name,
-			new GridBagConstraints(
-				1,
-				1,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0),
-				300,
-				0));
-		mainPanel.add(
-			labelb,
-			new GridBagConstraints(
-				0,
-				2,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0),
-				0,
-				0));
-		mainPanel.add(
-			email,
-			new GridBagConstraints(
-				1,
-				2,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0),
-				300,
-				0));
-		mainPanel.add(
-			labelc,
-			new GridBagConstraints(
-				0,
-				3,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0),
-				0,
-				0));
-		mainPanel.add(
-			nickname,
-			new GridBagConstraints(
-				1,
-				3,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0),
-				300,
-				0));
-		mainPanel.add(
-			labeld,
-			new GridBagConstraints(
-				0,
-				4,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0),
-				0,
-				0));
-
-		mainPanel.add(
-			alternative,
-			new GridBagConstraints(
-				1,
-				4,
-				1,
-				1,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0),
-				300,
-				0));
-
-		mainPanel.add(
-			sb_Panel,
-			new GridBagConstraints(
-				0,
-				5,
-				0,
-				0,
-				0.0,
-				0.0,
-				GridBagConstraints.CENTER,
-				GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0),
-				0,
-				0));
-
-		topImagePanel.setLayout(new BorderLayout());
-		topImagePanel.add(new JLabel(topImage), BorderLayout.NORTH);
-		topImagePanel.add(new JSeparator());
-		northCenter.add(mainPanel, BorderLayout.CENTER);
-		getContentPane().add(topImagePanel, BorderLayout.NORTH);
-		getContentPane().add(northCenter, BorderLayout.CENTER);
-		southPanel.add(conPanel, BorderLayout.CENTER);
+		JPanel southPanel = new JPanel(new BorderLayout());
 		southPanel.add(new JSeparator(), BorderLayout.NORTH);
+		southPanel.add(conPanel, BorderLayout.CENTER);
+
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(topImagePanel, BorderLayout.NORTH);
+		getContentPane().add(mainPanel, BorderLayout.CENTER);
 		getContentPane().add(southPanel, BorderLayout.SOUTH);
 
-	}
-
-	public void initServerPanel() {
-		GridBagConstraints gridBagConstraints;
-
-		sb_Panel.setLayout(new GridBagLayout());
-		sb_Panel.setBorder(new TitledBorder("Servidor"));
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 0;
-		sb_Panel.add(sl_Group, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 0;
-		gridBagConstraints.gridwidth = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(0, 0, 2, 0);
-		sb_Panel.add(jc_Group, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 1;
-		sb_Panel.add(sl_Server, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 1;
-		gridBagConstraints.gridwidth = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(1, 0, 0, 0);
-		sb_Panel.add(jc_Server, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(0, 0, 0, 3);
-		sb_Panel.add(sb_Edit, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(0, 0, 0, 3);
-		sb_Panel.add(sb_Add, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 2;
-		gridBagConstraints.gridy = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		sb_Panel.add(sb_Del, gridBagConstraints);
-		getContentPane().add(sb_Panel, BorderLayout.CENTER);
-
-	}
-
-	public void initServers() {
 		reloadServers(null);
+	}
 
-		jc_Group.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (!reloading) {
-					fillServers();
-				}
+	private static void addRow(JPanel panel, int row, String label, JTextField field) {
+		panel.add(
+			new JLabel(label),
+			new GridBagConstraints(
+				0, row, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		panel.add(
+			field,
+			new GridBagConstraints(
+				1, row, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(0, 0, 0, 0), 300, 0));
+	}
+
+	private JPanel createServerPanel() {
+		JButton edit = new JButton("Editar");
+		JButton add = new JButton("Adicionar");
+		JButton delete = new JButton("Deletar");
+		groupCombo.addActionListener(e -> {
+			if (!reloading) {
+				fillServers();
 			}
 		});
-
-		sb_Add.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				editServer(null);
+		add.addActionListener(e -> editServer(null));
+		edit.addActionListener(e -> {
+			if (getServer() != null) {
+				editServer(getServer());
 			}
 		});
+		delete.addActionListener(e -> deleteServer());
 
-		sb_Edit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (getServer() != null) {
-					editServer(getServer());
-				}
-			}
-		});
-
-		sb_Del.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				deleteServer();
-			}
-		});
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setBorder(new TitledBorder("Servidor"));
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 0;
+		panel.add(new JLabel("Grupo"), c);
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = 0;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets(0, 0, 2, 0);
+		panel.add(groupCombo, c);
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 1;
+		panel.add(new JLabel("Servidor"), c);
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = 1;
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets(1, 0, 0, 0);
+		panel.add(serverCombo, c);
+		JButton[] buttons = { edit, add, delete };
+		for (int i = 0; i < buttons.length; i++) {
+			c = new GridBagConstraints();
+			c.gridx = i;
+			c.gridy = 2;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.insets = new Insets(0, 0, 0, i < buttons.length - 1 ? 3 : 0);
+			panel.add(buttons[i], c);
+		}
+		return panel;
 	}
 
 	/**
 	 * Reloads the groups and servers combos
 	 * @param selected the server to be selected, can be null
 	 */
-	private void reloadServers(String[] selected) {
+	private void reloadServers(Server selected) {
 		reloading = true;
-		Object group = jc_Group.getSelectedItem();
-		g = new Groups(reader.getH());
-		jc_Group.removeAllItems();
-		jc_Group.addItem("all");
-		for (int i = 0; i < g.getGroups().size(); i++) {
-			jc_Group.addItem(g.getGroups().get(i));
-		}
-		if (group != null && g.getGroup((String) group)) {
-			jc_Group.setSelectedItem(group);
+		Object group = selected != null ? selected.group() : groupCombo.getSelectedItem();
+		List<String> groups = reader.getGroups();
+		groupCombo.removeAllItems();
+		groupCombo.addItem(ALL_GROUPS);
+		groups.forEach(groupCombo::addItem);
+		if (group != null && groups.contains(group)) {
+			groupCombo.setSelectedItem(group);
 		}
 		reloading = false;
 		fillServers();
 		if (selected != null && servers.contains(selected)) {
-			jc_Server.setSelectedIndex(servers.indexOf(selected));
+			serverCombo.setSelectedIndex(servers.indexOf(selected));
 		}
 	}
 
@@ -334,48 +194,44 @@ public class PIRCConnectionWindow extends JDialog {
 	 * Fills the servers combo with the servers of the selected group
 	 */
 	private void fillServers() {
-		String s = (String) jc_Group.getSelectedItem();
-		jc_Server.removeAllItems();
-		servers.removeAllElements();
-		for (int i = 0; i < g.getServerValues().size(); i++) {
-			String[] x = (String[]) g.getServerValues().get(i);
-			if (jc_Group.getSelectedIndex() <= 0 || x[0].equals(s)) {
-				servers.add(x);
-				jc_Server.addItem(x[1]);
+		Object group = groupCombo.getSelectedItem();
+		boolean all = groupCombo.getSelectedIndex() <= 0;
+		serverCombo.removeAllItems();
+		servers.clear();
+		for (Server server : reader.getServers()) {
+			if (all || server.group().equals(group)) {
+				servers.add(server);
+				serverCombo.addItem(server.name());
 			}
 		}
 	}
 
-	private void editServer(String[] server) {
-		PIRCEditServer edit = new PIRCEditServer(this, reader);
-		edit.setGroups(g.getGroups());
-		edit.setServer(server);
-		edit.setLocationRelativeTo(this);
+	private void editServer(Server server) {
+		PIRCEditServer edit =
+			new PIRCEditServer(this, reader, reader.getGroups(), server);
 		edit.setVisible(true);
-		if (edit.isSaved()) {
-			reloadServers(server == null
-				? (String[]) reader.getH().lastElement()
-				: server);
+		if (edit.getSavedServer() != null) {
+			reloadServers(edit.getSavedServer());
 		}
 	}
 
 	private void deleteServer() {
-		String[] server = getServer();
+		Server server = getServer();
 		if (server == null) {
 			return;
 		}
 		int option =
 			JOptionPane.showConfirmDialog(
 				this,
-				"Deletar o servidor " + server[1] + "?",
+				"Deletar o servidor " + server.name() + "?",
 				"Deletar",
 				JOptionPane.YES_NO_OPTION);
 		if (option == JOptionPane.YES_OPTION) {
-			reader.getH().remove(server);
+			reader.remove(server);
 			try {
 				reader.save();
 			} catch (IOException e) {
-				new PIRCExceptionWindow("Não foi possível salvar", e).show();
+				PIRCExceptionWindow.showError(this, "Não foi possível salvar", e);
 			}
 			reloadServers(null);
 		}
@@ -389,7 +245,10 @@ public class PIRCConnectionWindow extends JDialog {
 		return email.getText();
 	}
 
-	public String getName() {
+	/**
+	 * @return the real name typed by the user
+	 */
+	public String getRealName() {
 		return name.getText();
 	}
 
@@ -399,111 +258,43 @@ public class PIRCConnectionWindow extends JDialog {
 
 	/**
 	 * Returns the selected server
-	 * @return { group, name, url, port } or null if no server is selected
+	 * @return the server or null if no server is selected
 	 */
-	public String[] getServer() {
-		int index = jc_Server.getSelectedIndex();
+	public Server getServer() {
+		int index = serverCombo.getSelectedIndex();
 		if (index < 0 || index >= servers.size()) {
 			return null;
 		}
-		return (String[]) servers.get(index);
+		return servers.get(index);
 	}
 
-	private void connectionEvent(ActionEvent e) {
+	private void connectionEvent() {
 		if (getServer() == null) {
-			JOptionPane.showMessageDialog(
-				this,
-				"Selecione um servidor.",
-				getTitle(),
-				JOptionPane.WARNING_MESSAGE);
+			warn("Selecione um servidor.");
 			return;
 		}
-		if (getNickname().trim().length() == 0) {
-			JOptionPane.showMessageDialog(
-				this,
-				"Informe o NickName.",
-				getTitle(),
-				JOptionPane.WARNING_MESSAGE);
+		if (getNickname().isBlank()) {
+			warn("Informe o NickName.");
 			return;
 		}
 		dispose();
 		pircFrame.connect(this);
 	}
 
-	private final JLabel labela = new JLabel("Name: "),
-		labelb = new JLabel("Email: "),
-		labelc = new JLabel("NickName: "),
-		labeld = new JLabel("Alternativo: ");
-	private final JTextField name = new JTextField("pIRC"),
-		email = new JTextField("seunome@seuprovedor.com"),
-		nickname = new JTextField("usuario_pIRC"),
-		alternative = new JTextField("usu_pIRC");
-	private final JPanel serverPanel = new JPanel(),
-		mainPanel = new JPanel(),
-		conPanel = new JPanel(),
-		southPanel = new JPanel(),
-		northCenter = new JPanel();
-	private final JButton connect = new JButton("Conectar");
+	private void warn(String message) {
+		JOptionPane.showMessageDialog(this, message, getTitle(), JOptionPane.WARNING_MESSAGE);
+	}
+
+	private final JTextField name = new JTextField("pIRC");
+	private final JTextField email = new JTextField("seunome@seuprovedor.com");
+	private final JTextField nickname = new JTextField("usuario_pIRC");
+	private final JTextField alternative = new JTextField("usu_pIRC");
+	private final JComboBox<String> serverCombo = new JComboBox<>();
+	private final JComboBox<String> groupCombo = new JComboBox<>();
+	private final PIRCServersReader reader =
+		new PIRCServersReader(Path.of("cfg", "servers.xml"));
+	private final List<Server> servers = new ArrayList<>();
 	private final PIRCFrame pircFrame;
-	private final JButton cancel = new JButton("Cancelar");
-	private final GridBagLayout defaultLayout = new GridBagLayout();
-	private final GridBagConstraints defaultLayoutConstraints =
-		new GridBagConstraints();
-	private final JPanel topImagePanel = new JPanel();
-	private final ImageIcon topImage =
-		new ImageIcon(
-			PIRCConnectionWindow.class.getResource("images/connection_top.gif"));
-	private final JLabel sl_Group = new JLabel("Grupo");
-	private final JLabel sl_Server = new JLabel("Servidor");
-	private final JButton sb_Edit = new JButton("Editar");
-	private final JButton sb_Add = new JButton("Adicionar");
-	private final JButton sb_Del = new JButton("Deletar");
-	private final JPanel sb_Panel = new JPanel();
-	private final JComboBox jc_Server = new JComboBox();
-	private final JComboBox jc_Group = new JComboBox();
-	private PIRCServersReader reader = new PIRCServersReader("cfg/servers.xml");
-	private Groups g;
-	private final Vector servers = new Vector();
 	private boolean reloading;
-
-}
-
-class Groups {
-
-	public Groups(Vector v) {
-		this.vs = v;
-		init();
-	}
-
-	private void init() {
-		for (int i = 0; i < vs.size(); i++) {
-			String[] element = (String[]) vs.get(i);
-			addServerValue(element);
-			if (!getGroup(element[0])) {
-				groups.add(element[0]);
-			}
-		}
-	}
-
-	public boolean getGroup(String groupName) {
-		return groups.contains(groupName);
-	}
-
-	public Vector getGroups() {
-		return groups;
-	}
-
-	public Vector getServerValues() {
-		return serverValues;
-	}
-
-	public void addServerValue(String[] element) {
-		serverValues.add(element);
-	}
-
-	private Vector groups = new Vector();
-	private String[] a;
-	private Vector vs;
-	private Vector serverValues = new Vector();
 
 }

@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )
@@ -21,72 +21,36 @@
 
 package org.aconstantino.pirc;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Objects;
 
 /**
-  *Basic Identd Server for connecting to IRC network
+  *Basic Identd Server for connecting to IRC network.
+  *Answers one ident request (RFC 1413) and closes.
   *@author Ademir Constantino Filho
   *@since pIRC 0.1
   */
 
-public class Identd extends Thread {
-
-	/**
-	 * @return the version for this ident server
-	 */
-
-	public float getVersion() {
-		return versionInfo;
-	}
-
-	/**
-	 * Return the Connection State for this sever
-	 * @return <code> true </code> if connected
-	 * @return <code> false </code> if not connected
-	 */
-
-	public boolean getConnectedState() {
-		return connected;
-	}
-
-	/**
-	 * If the data was sent to server return <code> true </code>
-	 * @return <code> true </code> if your ident data was sent to server
-	 */
-
-	public boolean wasSent() {
-		boolean toReturn;
-		if (!connected && wSent) {
-			toReturn = true;
-		} else {
-			toReturn = false;
-		}
-
-		return toReturn;
-	}
+public final class Identd extends Thread {
 
 	/**
 	 * The Ident Server constructor
-	 * @param systemValue System (default java)
-	 * @param userNameValue the username
+	 * @param system System (default java)
+	 * @param username the username
 	 */
 
-	public Identd(String systemValue, String usernameValue) {
-
-		if (systemValue == null)
-			throw new NullPointerException();
-		if (usernameValue == null)
-			throw new NullPointerException();
-
-		wSent = false;
-		this.system = systemValue;
-		this.username = usernameValue;
-		userId = "USERID";
+	public Identd(String system, String username) {
+		super("pIRC-identd");
+		this.system = Objects.requireNonNull(system, "system");
+		this.username = Objects.requireNonNull(username, "username");
 		setDaemon(true);
 	}
 
@@ -95,25 +59,28 @@ public class Identd extends Thread {
 	 * the ident server. Use <code>start()</code> to run it in background.
 	 */
 
+	@Override
 	public void run() {
 		try {
-			serversocket = new ServerSocket(port);
-			socket = serversocket.accept();
-			in =
+			serverSocket = new ServerSocket(PORT);
+			if (closed) {
+				return;
+			}
+			socket = serverSocket.accept();
+			BufferedReader in =
 				new BufferedReader(
-					new InputStreamReader(socket.getInputStream()));
-			out = new PrintStream(socket.getOutputStream(), true);
-			connected = true;
-			sr = in.readLine();
-			if (sr != null) {
-				String sr2 =
-					sr.trim() + " : " + userId + " : " + system + " : " + username;
-				wSent = true;
-				out.print(sr2 + "\r\n");
+					new InputStreamReader(socket.getInputStream(), US_ASCII));
+			String request = in.readLine();
+			if (request != null) {
+				Writer out = new OutputStreamWriter(socket.getOutputStream(), US_ASCII);
+				out.write(request.trim() + " : USERID : " + system + " : " + username + "\r\n");
+				out.flush();
 			}
 		} catch (IOException e) {
 			// port 113 needs special privileges on most systems
-			System.err.println("Identd: " + e.getMessage());
+			if (!closed) {
+				System.err.println("Identd: " + e.getMessage());
+			}
 		} finally {
 			close();
 		}
@@ -124,86 +91,25 @@ public class Identd extends Thread {
 	 */
 
 	public void close() {
-		try {
-			connected = false;
-			if (out != null) {
-				out.close();
+		closed = true;
+		closeQuietly(socket);
+		closeQuietly(serverSocket);
+	}
+
+	private static void closeQuietly(AutoCloseable c) {
+		if (c != null) {
+			try {
+				c.close();
+			} catch (Exception e) {
+				// nothing to do
 			}
-			if (socket != null) {
-				socket.close();
-			}
-			if (serversocket != null) {
-				serversocket.close();
-			}
-		} catch (IOException e) {
 		}
 	}
 
-	/**
-	 * Returns the system.
-	 * @return String
-	 */
-	public String getSystem() {
-		return system;
-	}
-
-	/**
-	 * Returns the userId.
-	 * @return String
-	 */
-	public String getUserId() {
-		return userId;
-	}
-
-	/**
-	 * Returns the username.
-	 * @return String
-	 */
-	public String getUsername() {
-		return username;
-	}
-
-	/**
-	 * Returns the versionInfo.
-	 * @return float
-	 */
-	public float getVersionInfo() {
-		return versionInfo;
-	}
-
-	/**
-	 * Sets the system.
-	 * @param system The system to set
-	 */
-	public void setSystem(String system) {
-		this.system = system;
-	}
-
-	/**
-	 * Sets the userId.
-	 * @param userId The userId to set
-	 */
-	public void setUserId(String userId) {
-		this.userId = userId;
-	}
-
-	/**
-	 * Sets the username.
-	 * @param username The username to set
-	 */
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	private final int port = 113;
-	private String sr;
-	private boolean connected;
-	private String userId, system, username;
-	private ServerSocket serversocket;
-	private Socket socket;
-	private BufferedReader in;
-	private PrintStream out;
-	private boolean wSent;
-	private final float versionInfo = (float) 0.3;
+	private static final int PORT = 113;
+	private final String system, username;
+	private volatile ServerSocket serverSocket;
+	private volatile Socket socket;
+	private volatile boolean closed;
 
 }

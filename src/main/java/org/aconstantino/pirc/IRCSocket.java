@@ -1,8 +1,8 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
-  * 
+  *
   * Copyright (C) 2002 -  Ademir Constantino Filho
-  * 
+  *
   * Este programa é software livre; você pode redistribuí-lo e/ou
   * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
   * publicada pela Free Software Foundation; tanto a versão 2 da
@@ -26,212 +26,88 @@
 
 package org.aconstantino.pirc;
 
-import java.io.BufferedReader;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.util.Objects;
 
 /**
  *
- * The irclib socket										
+ * The irclib socket. Sends the lines in UTF-8 and reads lines in UTF-8,
+ * falling back to ISO-8859-1 for lines that are not valid UTF-8.
  * @author Ziegfried Duhbe
- * @version 0.2b
+ * @version 0.3
  */
 
-public class IRCSocket {
+public final class IRCSocket implements Closeable {
+
+	/** Time to wait for the server to accept the connection (30 seconds) */
+	public static final int CONNECT_TIMEOUT = 30_000;
 
 	/**
-	 * Sets the timeOut attribute of the IRCSocket object
-	 * The time out for the socket, default value is 30000 ( 30 seconds )
-	 * @param  setTimeOutSocket  The new timeOut value
-	 * @see #setTimeOut
-	 * @see #setServer
-	 * @see #setPort
+	 * @param serverName the server address
+	 * @param serverPort the server port ( 6667 most popular port )
 	 */
-
-	public void setTimeOut(int setTimeOutSocket) {
-		if (setTimeOutSocket != 0) {
-			this.timeOut = setTimeOutSocket;
-			timeOutConfigured = true;
-		} else {
-			throw new NullPointerException();
+	public IRCSocket(String serverName, int serverPort) {
+		this.serverName = Objects.requireNonNull(serverName, "serverName");
+		if (serverPort <= 0 || serverPort > 65535) {
+			throw new IllegalArgumentException("Invalid port: " + serverPort);
 		}
-		this.checkConfig();
+		this.serverPort = serverPort;
 	}
 
 	/**
-	 * Sets the serverPort attribute of the IRCSocket object
-	 * ( 6667 most popular port )
-	 * @param  newPortValue Server Port
-	 * @see #setTimeOut
-	 * @see #setServer
-	 */
-
-	public void setPort(int newPortValue) {
-		if (newPortValue != 0) {
-			this.serverPort = newPortValue;
-			serverPortConfigured = true;
-		} else {
-			throw new NullPointerException();
-		}
-		this.checkConfig();
-	}
-
-	/**
-	 * Sets the serverName attribute of the IRCSocket object
-	 * @param  newServerValue Server addr String
-	 * @see #setTimeOut
-	 * @see #setPort
-	 */
-
-	public void setServer(String newServerValue) {
-		if (newServerValue != null) {
-			this.serverName = newServerValue;
-			serverNameConfigured = true;
-		} else {
-			throw new NullPointerException();
-		}
-		this.checkConfig();
-	}
-
-	/**
-	 * Constructor for the IRCSocket object
+	 * Connect to the IRC Server, blocks until connected
 	 *
-	 * @param  setServerName  Constructor for the IRCSocket with serverName only
-	 */
-
-	public IRCSocket(String setServerName) {
-		if (setServerName != null) {
-			this.serverName = setServerName;
-			serverNameConfigured = true;
-		} else {
-			throw new NullPointerException();
-		}
-	}
-
-	/**
-	 * Constructor for the IRCSocket object
-	 *
-	 * @param  setServerName  setServerName to connect
-	 * @param  setServerPort  setServerPort to connect ( 6667 most popular port )
-	 * @param  setTimeOut     setTimeOut value, the socket will be closed if servers does not respond in timeOut value
-	 */
-
-	public IRCSocket(String setServerName, int setServerPort, int setTimeOut) {
-
-		if (!isConfigured) {
-			if (setServerName == null) {
-				throw new NullPointerException();
-			}
-			if (setServerName != null) {
-				this.serverName = setServerName;
-				serverNameConfigured = true;
-			}
-			if (serverPort == 0) {
-				throw new NullPointerException();
-			}
-			if (setServerPort != 0) {
-				this.serverPort = setServerPort;
-				serverPortConfigured = true;
-			}
-			if (setTimeOut != 0) {
-				this.timeOut = setTimeOut;
-				timeOutConfigured = true;
-			} else {
-				throw new NullPointerException();
-			}
-			this.checkConfig();
-		}
-	}
-
-	public IRCSocket() {
-	}
-
-	/**
-	 * Constructor for the IRCSocket object
-	 *
-	 * @param  setServerName  setServerName to connect
-	 * @param  setServerPort  setServerPort to connect ( 6667 most popular port )
-	 */
-
-	public IRCSocket(String setServerName, int setServerPort) {
-		if (!isConfigured) {
-			if (setServerName == null) {
-				throw new NullPointerException();
-			}
-			if (setServerName != null) {
-				this.serverName = setServerName;
-				serverNameConfigured = true;
-			}
-			if (serverPort == 0) {
-				throw new NullPointerException();
-			}
-			if (setServerPort != 0) {
-				this.serverPort = setServerPort;
-				serverPortConfigured = true;
-			}
-			this.checkConfig();
-		}
-	}
-
-	/**
-	 * Connect to the IRC Server 
-	 *
-	 * @exception  IRCSocketException
+	 * @exception  IRCSocketException if the connection fails
 	 */
 	public void connect() throws IRCSocketException {
-		if (isCon) {
-			throw new IRCSocketException(" Already connected.");
+		if (socket != null) {
+			throw new IRCSocketException("Already connected.");
 		}
-		if (timeOut < 0) {
-			throw new IRCSocketException(" TimeOut can´t be negative value.");
-		}
-		if (isClosed) {
-			throw new IRCSocketException(" Socket is closed.");
-		}
-		if (!isConfigured) {
-			throw new IRCSocketException(" IRCSocket not configured.");
-		}
-		if (isConfigured && !isClosed && timeOut > 0) {
-			connect(1);
-		}
-	}
-
-	private void connect(int value) throws IRCSocketException {
-		if (value == 0) {
-			close();
-		}
+		Socket s = new Socket();
 		try {
-			this.socket = new Socket(serverName, serverPort);
-			this.socket.setSoTimeout(timeOut);
+			s.connect(new InetSocketAddress(serverName, serverPort), CONNECT_TIMEOUT);
+			in = new BufferedInputStream(s.getInputStream());
+			out = new BufferedWriter(new OutputStreamWriter(s.getOutputStream(), UTF_8));
+			socket = s;
 		} catch (IOException e) {
-			throw new IRCSocketException(e.getMessage());
-		}
-
-		try {
-			this.setUpSocketStream();
-			isCon = true;
-		} catch (IOException e) {
-			throw new IRCSocketException(e.getMessage());
+			try {
+				s.close();
+			} catch (IOException ignored) {
+				// already failed
+			}
+			throw new IRCSocketException(
+				e.getMessage() != null ? e.getMessage() : e.toString());
 		}
 	}
 
 	/**
 	 *  Close the IRCSocket
-	 *
-	 * @exception  IRCSocketException  Description of the Exception
 	 */
 
-	public void close() throws IRCSocketException {
-		try {
-			if (socket != null) {
-				socket.close();
+	@Override
+	public void close() {
+		Socket s = socket;
+		if (s != null) {
+			try {
+				s.close();
+			} catch (IOException e) {
+				// nothing to do
 			}
-			isCon = false;
-			isClosed = true;
-		} catch (IOException e) {
-			throw new IRCSocketException(e.getMessage());
 		}
 	}
 
@@ -239,93 +115,84 @@ public class IRCSocket {
 	 * Close IRCSocket sending a Quit message to IRC Server
 	 *
 	 * @param  quitMessage             Quit Message ( Bye! )
-	 * @exception  IRCSocketException 
 	 */
 
-	public void close(String quitMessage) throws IRCSocketException {
+	public void close(String quitMessage) {
 		try {
-			this.writeln("QUIT :" + quitMessage);
-			socket.close();
-			isCon = false;
-			isClosed = true;
-		} catch (IOException e) {
-			throw new IRCSocketException(e.getMessage());
+			println("QUIT :" + quitMessage);
+		} catch (IRCSocketException e) {
+			// closing anyway
 		}
-	}
-
-	private void checkConfig() {
-		if (serverNameConfigured
-			&& serverPortConfigured
-			&& timeOutConfigured
-			&& !isCon) {
-			isConfigured = true;
-		} else {
-			isConfigured = false;
-		}
-	}
-
-	private void setUpSocketStream() throws IOException {
-		sockReader =
-			new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		sockWriter = new PrintStream(socket.getOutputStream(), true);
+		close();
 	}
 
 	/**
-	 * Gets the inputData attribute of the IRCSocket object
+	 * Reads a line sent by the server
 	 *
-	 * @return                         The inputData value
-	 * @exception  IRCSocketException  Description of the Exception
+	 * @return the line without CRLF, or null when the connection is closed
+	 * @exception  IRCSocketException if the connection fails
 	 */
 
-	public String getInputData() throws IRCSocketException {
+	public String readLine() throws IRCSocketException {
+		if (in == null) {
+			throw new IRCSocketException("Not connected.");
+		}
 		try {
-			return sockReader.readLine();
+			lineBuffer.reset();
+			int b;
+			while ((b = in.read()) != -1) {
+				if (b == '\n') {
+					return decode(lineBuffer.toByteArray());
+				}
+				lineBuffer.write(b);
+			}
+			return lineBuffer.size() > 0 ? decode(lineBuffer.toByteArray()) : null;
 		} catch (IOException e) {
 			throw new IRCSocketException(e.getMessage());
 		}
 	}
 
 	/**
-	 * Write String to server
-	 *
-	 * @param  strWrite                String to send ( msg ? )
-	 * @exception  IRCSocketException
+	 * Decodes a line in UTF-8, or in ISO-8859-1 if it is not valid UTF-8
+	 * @param bytes the line, with or without the CR
 	 */
-	public void write(String strWrite) throws IRCSocketException {
-		sockWriter.print(strWrite);
+	static String decode(byte[] bytes) {
+		int length = bytes.length;
+		if (length > 0 && bytes[length - 1] == '\r') {
+			length--;
+		}
+		try {
+			return UTF_8
+				.newDecoder()
+				.onMalformedInput(CodingErrorAction.REPORT)
+				.onUnmappableCharacter(CodingErrorAction.REPORT)
+				.decode(ByteBuffer.wrap(bytes, 0, length))
+				.toString();
+		} catch (CharacterCodingException e) {
+			return new String(bytes, 0, length, ISO_8859_1);
+		}
 	}
 
 	/**
-	 * Write String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
+	 * Sends a line to the server, adding CRLF.
+	 * CR and LF inside the line are replaced by spaces, so a line
+	 * is always sent as a single IRC command.
 	 *
-	 * @param  strWrite                Description of the Parameter
-	 * @exception  IRCSocketException  Description of the Exception
+	 * @param  line                the line to send
+	 * @exception  IRCSocketException if the connection fails
 	 */
 
-	public void writeln(String strWrite) throws IRCSocketException {
-		sockWriter.print(strWrite + "\r\n");
-	}
-
-	/**
-	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
-	 *
-	 * @param  strPrint            	Str to print
-	 * @exception  IRCSocketException
-	 */
-
-	public void print(String strPrint) throws IRCSocketException {
-		write(strPrint);
-	}
-
-	/**
-	 * Print String to server with CRLF (´\r´ ( carriage returns ) & ´\n´ ( line feed ))
-	 *
-	 * @param  strPrint                Str to print
-	 * @exception  IRCSocketException
-	 */
-
-	public void println(String strPrint) throws IRCSocketException {
-		writeln(strPrint);
+	public synchronized void println(String line) throws IRCSocketException {
+		if (out == null) {
+			throw new IRCSocketException("Not connected.");
+		}
+		try {
+			out.write(line.replace('\r', ' ').replace('\n', ' '));
+			out.write("\r\n");
+			out.flush();
+		} catch (IOException e) {
+			throw new IRCSocketException(e.getMessage());
+		}
 	}
 
 	/**
@@ -349,158 +216,19 @@ public class IRCSocket {
 	}
 
 	/**
-	 * Gets the iRCSocketState attribute of the IRCSocket object
-	 *
-	 * @return    The ircsocket state
-	 */
-
-	public String getIRCSocketState() {
-		return (
-			new String(
-				"Connected to server: "
-					+ serverName
-					+ "\n On Port: "
-					+ serverPort));
-	}
-
-	/**
-	 * Gets the IRCSocket currtent state
-	 * if returns <code> true </code> it´s connected
-	 * if returns <code> false </code> it´s not connected
-	 * @return    The connected <code> boolean </code> value
+	 * @return <code> true </code> if connected and not closed
 	 */
 
 	public boolean isConnected() {
-		return isCon;
+		Socket s = socket;
+		return s != null && !s.isClosed();
 	}
 
-	/**
-	 * Gets the IRCSocket configured value
-	 * if returns <code> true </code> the ircsocket it´s configured
-	 * if returns <code> false </code> the ircsocket it´s not configured
-	 * @return    true if is configured false if not configured
-	 */
-
-	public boolean isConfiguredState() {
-		return isConfigured;
-	}
-
-	/**
-	 * Returns the isClosed.
-	 * @return boolean
-	 */
-	public boolean isClosed() {
-		return isClosed;
-	}
-
-	/**
-	 * Returns the isCon.
-	 * @return boolean
-	 */
-	public boolean isCon() {
-		return isCon;
-	}
-
-	/**
-	 * Returns the isConfigured.
-	 * @return boolean
-	 */
-	public boolean isConfigured() {
-		return isConfigured;
-	}
-
-	/**
-	 * Returns the serverName.
-	 * @return String
-	 */
-	public String getServerName() {
-		return serverName;
-	}
-
-	/**
-	 * Returns the serverNameConfigured.
-	 * @return boolean
-	 */
-	public boolean isServerNameConfigured() {
-		return serverNameConfigured;
-	}
-
-	/**
-	 * Returns the serverPort.
-	 * @return int
-	 */
-	public int getServerPort() {
-		return serverPort;
-	}
-
-	/**
-	 * Returns the serverPortConfigured.
-	 * @return boolean
-	 */
-	public boolean isServerPortConfigured() {
-		return serverPortConfigured;
-	}
-
-	/**
-	 * Returns the socket.
-	 * @return Socket
-	 */
-	public Socket getSocket() {
-		return socket;
-	}
-
-	/**
-	 * Returns the socketConfigured.
-	 * @return boolean
-	 */
-	public boolean isSocketConfigured() {
-		return socketConfigured;
-	}
-
-	/**
-	 * Returns the sockReader.
-	 * @return BufferedReader
-	 */
-	public BufferedReader getSockReader() {
-		return sockReader;
-	}
-
-	/**
-	 * Returns the sockWriter.
-	 * @return PrintWriter
-	 */
-	public PrintStream getSockWriter() {
-		return sockWriter;
-	}
-
-	/**
-	 * Returns the timeOut.
-	 * @return int
-	 */
-	public int getTimeOut() {
-		return timeOut;
-	}
-
-	/**
-	 * Returns the timeOutConfigured.
-	 * @return boolean
-	 */
-	public boolean isTimeOutConfigured() {
-		return timeOutConfigured;
-	}
-
-	private boolean isCon = false;
-	private boolean isClosed = false;
-	private BufferedReader sockReader;
-	private PrintStream sockWriter;
-	private boolean socketConfigured,
-		serverNameConfigured,
-		serverPortConfigured,
-		timeOutConfigured;
-	private Socket socket;
-	private String serverName;
-	private int serverPort;
-	private boolean isConfigured = false;
-	private int timeOut = 30000;
+	private final String serverName;
+	private final int serverPort;
+	private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream(512);
+	private volatile Socket socket;
+	private InputStream in;
+	private Writer out;
 
 }

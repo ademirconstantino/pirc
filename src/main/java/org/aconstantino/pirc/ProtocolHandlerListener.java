@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -27,26 +27,26 @@ package org.aconstantino.pirc;
 
 public interface ProtocolHandlerListener {
 
-	public void onUnknown(String unknownString);
-	public void onWelcome(String welcomeStr);
-	public void onYourHost(String params);
-	public void onCreated(String params);
-	public void onBounce(String serverName);
-	public void onPing();
-	public void onSendPong();
-	public void onMyInfo(String params);
-	public void onJoin(String channel, String prefix);
-	public void onPart(String channel, String prefix);
-	public void onNick(String newNick, String oldNick);
-	public void onNamReply(NickNameList nicks, String chan);
-	public void onChanMsg(String to, String msg, String from);
-	public void onTopic(String channel, String param);
-	public void onTopicSet(String by, String chan, String newTopic);
-	public void onNickInUse(String nick);
-	public void onQuit(String prefix, String reason);
-	public void onKick(String channel, String who, String by, String reason);
-	public void onMode(String target, String modes, String by);
-	public void onPrivMsg(String from, String msg);
-	public void onNotice(String to, String msg, String from);
-	public void onCtcp(String to, String msg, String from);
+	void onUnknown(String unknownString);
+	void onWelcome(String welcomeStr);
+	void onYourHost(String params);
+	void onCreated(String params);
+	void onBounce(String serverName);
+	void onPing();
+	void onSendPong();
+	void onMyInfo(String params);
+	void onJoin(String channel, String prefix);
+	void onPart(String channel, String prefix);
+	void onNick(String newNick, String oldNick);
+	void onNamReply(NickNameList nicks, String chan);
+	void onChanMsg(String to, String msg, String from);
+	void onTopic(String channel, String param);
+	void onTopicSet(String by, String chan, String newTopic);
+	void onNickInUse(String nick);
+	void onQuit(String prefix, String reason);
+	void onKick(String channel, String who, String by, String reason);
+	void onMode(String target, String modes, String by);
+	void onPrivMsg(String from, String msg);
+	void onNotice(String to, String msg, String from);
+	void onCtcp(String to, String msg, String from);
 }

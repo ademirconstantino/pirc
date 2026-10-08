@@ -1,8 +1,8 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
-  * 
+  *
   * Copyright (C) 2002 -  Ademir Constantino Filho
-  * 
+  *
   * Este programa é software livre; você pode redistribuí-lo e/ou
   * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
   * publicada pela Free Software Foundation; tanto a versão 2 da
@@ -27,431 +27,333 @@
 
 package org.aconstantino.pirc;
 
+import static org.aconstantino.pirc.ProtocolHandlerConstants.BOUNCE;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.CREATED;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.END_OF_NAMES;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.ERR_NICK_NAME_IN_USE;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.MY_INFO;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.NAM_REPLY;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.TOPIC;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.WELCOME;
+import static org.aconstantino.pirc.ProtocolHandlerConstants.YOUR_HOST;
+
 import java.lang.reflect.InvocationTargetException;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.SwingUtilities;
 
 /**
+ * Reads the lines sent by the server and updates the pIRC windows.
+ * The lines are read in a background thread and handled in the Swing
+ * event dispatch thread.
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  11:22:59
  */
 
-public class ProtocolHandler
-	extends Thread
-	implements ProtocolHandlerConstants, ProtocolHandlerListener {
+public final class ProtocolHandler implements Runnable, ProtocolHandlerListener {
 
+	public ProtocolHandler(
+		PIRCFrame pircMain,
+		IRCSocket ircsocket,
+		PIRCConnectionWindow conWindow) {
+		this.pircMain = pircMain;
+		this.ircsocket = ircsocket;
+		this.conWindow = conWindow;
+	}
+
+	@Override
 	public void run() {
 		try {
-			while ((socketData = ircsocket.getInputData()) != null) {
-				final String line = socketData;
-				try {
-					/* the handlers update the Swing windows */
-					SwingUtilities.invokeAndWait(new Runnable() {
-						public void run() {
-							try {
-								parse(line);
-							} catch (IRCSocketException e) {
-							} catch (RuntimeException e) {
-								e.printStackTrace();
-							}
-						}
-					});
-				} catch (InterruptedException e) {
-					break;
-				} catch (InvocationTargetException e) {
-					e.printStackTrace();
+			String line;
+			while ((line = ircsocket.readLine()) != null) {
+				IrcMessage message = IrcMessage.parse(line);
+				if (message == null) {
+					continue;
 				}
+				String raw = line;
+				/* the handlers update the Swing windows */
+				SwingUtilities.invokeAndWait(() -> {
+					try {
+						handle(message, raw);
+					} catch (RuntimeException e) {
+						e.printStackTrace();
+					}
+				});
 			}
 		} catch (IRCSocketException e) {
+			// connection closed
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
 		}
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				pircMain.onDisconnected();
-			}
-		});
+		SwingUtilities.invokeLater(() -> pircMain.onDisconnected(ircsocket));
 	}
 
 	/**
-	 * Parses a line sent by the server
-	 * [':' prefix ' '] command [' ' params]
+	 * Handles a message sent by the server
+	 * @param m the parsed message
+	 * @param line the raw line, shown when the command is unknown
 	 */
-	private void parse(String line) throws IRCSocketException {
-		command = "";
-		param = "";
-		prefix = "";
-		isNumeric = false;
+	private void handle(IrcMessage m, String line) {
+		switch (m.command()) {
+			case "PING" -> {
+				send("PONG :" + m.trailing());
+				onSendPong();
+			}
+			case "PRIVMSG" -> {
+				String to = m.param(0);
+				String msg = m.trailing();
+				if (msg.startsWith("\u0001")) {
+					onCtcp(to, msg.replace("\u0001", ""), m.nick());
+				} else if (isChannel(to)) {
+					onChanMsg(to, msg, m.nick());
+				} else {
+					onPrivMsg(m.nick(), msg);
+				}
+			}
+			case "NOTICE" -> {
+				if (m.param(0).equals("AUTH")) {
+					onUnknown(m.trailing());
+				} else {
+					onNotice(m.param(0), m.trailing(), m.nick());
+				}
+			}
+			case "JOIN" -> onJoin(m.param(0), m.prefix());
+			case "PART" -> onPart(m.param(0), m.prefix());
+			case "NICK" -> onNick(m.param(0), m.prefix());
+			case "QUIT" -> onQuit(m.prefix(), m.trailing());
+			case "KICK" -> onKick(m.param(0), m.param(1), m.nick(), m.param(2));
+			case "MODE" -> onMode(m.param(0), m.paramsFrom(1), m.nick());
+			case "TOPIC" -> onTopicSet(m.nick(), m.param(0), m.trailing());
+			default -> {
+				if (m.isNumeric()) {
+					handleNumeric(m);
+				} else {
+					onUnknown(line);
+				}
+			}
+		}
+	}
 
-		String rest = line;
-		if (rest.startsWith(":")) {
-			int index = rest.indexOf(' ');
-			if (index == -1) {
-				return;
+	/**
+	 * Handles the numeric replies, the first parameter is always my nickname
+	 */
+	private void handleNumeric(IrcMessage m) {
+		switch (m.numeric()) {
+			case WELCOME -> {
+				registered = true;
+				pircMain.setMyNickName(m.param(0));
+				onWelcome(m.trailing());
 			}
-			prefix = rest.substring(1, index);
-			rest = rest.substring(index + 1).trim();
-		}
-		int index = rest.indexOf(' ');
-		if (index == -1) {
-			command = rest;
-		} else {
-			command = rest.substring(0, index);
-			param = rest.substring(index + 1).trim();
-		}
-		if (command.length() == 0) {
-			return;
-		}
-
-		if (Character.isDigit(command.charAt(0))) {
-			try {
-				numCommand = Integer.parseInt(command);
-				isNumeric = true;
-			} catch (NumberFormatException e) {
-				isNumeric = false;
+			case YOUR_HOST -> onYourHost(m.trailing());
+			case CREATED -> onCreated(m.trailing());
+			case MY_INFO -> onMyInfo(m.paramsFrom(1));
+			case BOUNCE -> onBounce(m.paramsFrom(1));
+			case ERR_NICK_NAME_IN_USE -> onNickInUse(m.param(1));
+			case NAM_REPLY -> {
+				/* <me> ( "=" / "*" / "@" ) <channel> :<nicks> */
+				String chan = m.param(m.params().size() - 2);
+				NickNameList nicks =
+					names.computeIfAbsent(chan, c -> new NickNameList());
+				for (String nick : m.trailing().split(" ")) {
+					if (!nick.isEmpty()) {
+						nicks.addNickName(nick);
+					}
+				}
 			}
-		}
-		/**
-		 * Parse and ping response
-		 */
-		if (command.equalsIgnoreCase("PING")) {
-			ircsocket.println("PONG " + trailing(param));
-			onSendPong();
-		} else if (command.equalsIgnoreCase("PRIVMSG")) {
-			String to = firstToken(param);
-			String msg = trailing(param);
-			String from = nickOf(prefix);
-			if (msg.startsWith("\u0001")) {
-				onCtcp(to, msg.replaceAll("\u0001", ""), from);
-			} else if (isChannel(to)) {
-				onChanMsg(to, msg, from);
-			} else {
-				onPrivMsg(from, msg);
+			case END_OF_NAMES -> {
+				String chan = m.param(1);
+				NickNameList nicks = names.remove(chan);
+				if (nicks != null) {
+					onNamReply(nicks, chan);
+				}
 			}
-		}
-		/**
-		 * parse notice auth commands
-		 */
-		else if (
-			command.equalsIgnoreCase("NOTICE") && param.startsWith("AUTH")) {
-			onUnknown(trailing(param));
-		} else if (command.equalsIgnoreCase("NOTICE")) {
-			onNotice(firstToken(param), trailing(param), nickOf(prefix));
-		}
-		/**
-		 * Parse server welcome msg
-		 */
-		else if (isNumeric && numCommand == WELCOME) {
-			registered = true;
-			pircMain.setMyNickName(firstToken(param));
-			onWelcome(trailing(param));
-		}
-		/**
-		 * Parse server your host msg
-		 */
-		else if (isNumeric && numCommand == YOUR_HOST) {
-			onYourHost(trailing(param));
-		}
-		/**
-		 * Parse server created msg
-		 */
-		else if (isNumeric && numCommand == CREATED) {
-			onCreated(trailing(param));
-		}
-		/**
-		 * Parse server my info msg
-		 */
-		else if (isNumeric && numCommand == MY_INFO) {
-			onMyInfo(trailing(param));
-		}
-		/**
-		 * Parse server bounce msg
-		 */
-		else if (isNumeric && numCommand == BOUNCE) {
-			onBounce(trailing(param));
-		} else if (isNumeric && numCommand == ERR_NICK_NAME_IN_USE) {
-			StringTokenizer st = new StringTokenizer(param);
-			st.nextToken();
-			onNickInUse(st.hasMoreTokens() ? st.nextToken() : "");
-		} else if (command.equalsIgnoreCase("JOIN")) {
-			onJoin(firstToken(trailing(param)), prefix);
-		} else if (command.equalsIgnoreCase("PART")) {
-			onPart(firstToken(param), prefix);
-		} else if (command.equalsIgnoreCase("NICK")) {
-			onNick(trailing(param), prefix);
-		} else if (command.equalsIgnoreCase("QUIT")) {
-			onQuit(prefix, trailing(param));
-		} else if (command.equalsIgnoreCase("KICK")) {
-			StringTokenizer st = new StringTokenizer(param);
-			String chan = st.nextToken();
-			String who = st.nextToken();
-			onKick(chan, who, nickOf(prefix), trailing(param));
-		} else if (command.equalsIgnoreCase("MODE")) {
-			String target = firstToken(param);
-			String modes = param.substring(target.length()).trim();
-			onMode(target, modes, nickOf(prefix));
-		} else if (command.equalsIgnoreCase("TOPIC")) {
-			onTopicSet(nickOf(prefix), firstToken(param), trailing(param));
-		} else if (isNumeric && numCommand == NAM_REPLY) {
-			/* <me> ( "=" / "*" / "@" ) <channel> :<nicks> */
-			StringTokenizer st = new StringTokenizer(param);
-			st.nextToken();
-			st.nextToken();
-			String chan = st.nextToken();
-			NickNameList nicks = (NickNameList) names.get(chan);
-			if (nicks == null) {
-				nicks = new NickNameList();
-				names.put(chan, nicks);
-			}
-			st = new StringTokenizer(trailing(param));
-			while (st.hasMoreTokens()) {
-				nicks.addNickName(st.nextToken());
-			}
-		} else if (isNumeric && numCommand == END_OF_NAMES) {
-			StringTokenizer st = new StringTokenizer(param);
-			st.nextToken();
-			String chan = st.nextToken();
-			NickNameList nicks = (NickNameList) names.remove(chan);
-			if (nicks != null) {
-				onNamReply(nicks, chan);
-			}
-		} else if (isNumeric && numCommand == TOPIC) {
-			StringTokenizer st = new StringTokenizer(param);
-			st.nextToken();
-			String chan = st.nextToken();
-			onTopic(chan, trailing(param));
-		} else if (isNumeric) {
+			case TOPIC -> onTopic(m.param(1), m.trailing());
 			/* removes the <me> target and shows the reply */
-			String msg = param.substring(firstToken(param).length()).trim();
-			int colon = msg.indexOf(':');
-			if (colon > -1 && (colon == 0 || msg.charAt(colon - 1) == ' ')) {
-				msg = msg.substring(0, colon) + msg.substring(colon + 1);
-			}
-			onUnknown(msg);
-		} else {
-			onUnknown(line);
+			default -> onUnknown(m.paramsFrom(1));
 		}
 	}
 
-	/**
-	 * Returns the trailing parameter (text after " :")
-	 */
-	private String trailing(String p) {
-		if (p.startsWith(":")) {
-			return p.substring(1);
+	private void send(String line) {
+		try {
+			ircsocket.println(line);
+		} catch (IRCSocketException e) {
+			// the reader thread notices the closed connection
 		}
-		int index = p.indexOf(" :");
-		if (index > -1) {
-			return p.substring(index + 2);
-		}
-		return p;
 	}
 
-	private String firstToken(String p) {
-		StringTokenizer st = new StringTokenizer(p);
-		if (!st.hasMoreTokens()) {
-			return "";
-		}
-		String s = st.nextToken();
-		return s.startsWith(":") ? s.substring(1) : s;
-	}
-
-	private String nickOf(String prefix) {
-		int index = prefix.indexOf('!');
-		return index > -1 ? prefix.substring(0, index) : prefix;
-	}
-
-	private String hostOf(String prefix) {
-		int index = prefix.indexOf('!');
-		return index > -1 ? prefix.substring(index + 1) : "";
-	}
-
-	private boolean isChannel(String name) {
-		return name.length() > 0 && "#&+!".indexOf(name.charAt(0)) > -1;
+	private static boolean isChannel(String name) {
+		return !name.isEmpty() && "#&+!".indexOf(name.charAt(0)) > -1;
 	}
 
 	private boolean isMe(String nick) {
 		return nick.equalsIgnoreCase(pircMain.getMyNickName());
 	}
 
-	private String strip(String s) {
-		return colorStrip.stripColor(s);
+	private static String strip(String s) {
+		return ColorStrip.stripColor(s);
 	}
 
-	private PIRCChannelWindow getChannelWindow(String channel) {
-		return pircMain.getChannelWindow(new Channel(channel));
+	private static String nickOf(String prefix) {
+		int index = prefix.indexOf('!');
+		return index > -1 ? prefix.substring(0, index) : prefix;
 	}
 
-	private IRCSocket ircsocket;
-
-	/**
-	 * Returns the ircsocket.
-	 * @return IRCSocket
-	 */
-	public IRCSocket getIrcsocket() {
-		return ircsocket;
+	private static String hostOf(String prefix) {
+		int index = prefix.indexOf('!');
+		return index > -1 ? prefix.substring(index + 1) : "";
 	}
 
-	public void setPIRCConnectionWindow(PIRCConnectionWindow conWindow) {
-		this.conWindow = conWindow;
+	private Channels channels() {
+		return pircMain.getChannels();
 	}
 
-	public void setPIRCFrame(PIRCFrame pircMain) {
-		this.pircMain = pircMain;
+	private void status(String text) {
+		pircMain.getMainWindow().append("-\r\n" + text);
 	}
 
-	/**
-	 * Sets the ircsocket.
-	 * @param ircsocket The ircsocket to set
-	 */
-	public void setIrcsocket(IRCSocket ircsocket) {
-		this.ircsocket = ircsocket;
-	}
-
+	@Override
 	public void onUnknown(String unknownString) {
-		pircMain.getMainWindow().append("-\r\n" + strip(unknownString));
+		status(strip(unknownString));
 	}
 
+	@Override
 	public void onWelcome(String welcomeStr) {
-		pircMain.getMainWindow().append("-\r\n" + strip(welcomeStr));
+		status(strip(welcomeStr));
 	}
 
+	@Override
 	public void onYourHost(String params) {
-		pircMain.getMainWindow().append("-\r\n" + strip(params));
+		status(strip(params));
 	}
 
+	@Override
 	public void onCreated(String params) {
-		pircMain.getMainWindow().append("-\r\n" + strip(params));
+		status(strip(params));
 	}
 
+	@Override
 	public void onBounce(String serverName) {
-		pircMain.getMainWindow().append("-\r\n" + strip(serverName));
+		status(strip(serverName));
 	}
 
+	@Override
 	public void onPing() {
-		pircMain.getMainWindow().append("-\r\n" + "Ping");
+		status("Ping");
 	}
 
+	@Override
 	public void onSendPong() {
-		pircMain.getMainWindow().append("-\r\n" + "Pong");
+		status("Pong");
 	}
 
+	@Override
 	public void onMyInfo(String params) {
-		pircMain.getMainWindow().append("-\r\n" + strip(params));
+		status(strip(params));
 	}
 
+	@Override
 	public void onNickInUse(String nick) {
 		String alternative =
 			conWindow == null ? "" : conWindow.getAlternative().trim();
 		if (!registered
-			&& alternative.length() > 0
+			&& !alternative.isEmpty()
 			&& !alternative.equalsIgnoreCase(nick)) {
-			pircMain.getMainWindow().append(
-				"-\r\n" + nick + " já está em uso, tentando " + alternative);
+			status(nick + " já está em uso, tentando " + alternative);
 			pircMain.setMyNickName(alternative);
-			try {
-				ircsocket.println("NICK " + alternative);
-			} catch (IRCSocketException e) {
-			}
+			send("NICK " + alternative);
 		} else {
-			pircMain.getMainWindow().append(
-				"-\r\n" + nick + " já está em uso, use /nick <novo nick>");
+			status(nick + " já está em uso, use /nick <novo nick>");
 		}
 	}
 
+	@Override
 	public void onJoin(String channel, String prefix) {
 		String nick = nickOf(prefix);
-		if (!pircMain.getChannels().getChannelExists(channel)) {
+		Channel c = channels().get(channel);
+		if (c == null) {
 			if (isMe(nick)) {
-				Channel c = new Channel();
-				c.setName(channel);
-				pircMain.getChannels().putChannel(c);
+				c = new Channel(channel);
+				channels().put(c);
 				pircMain.createChannelWindow(c);
 			}
 		} else if (!isMe(nick)) {
-			String host = hostOf(prefix);
-			NickNameList list =
-				pircMain.getChannels().getChannel(channel).getNickList();
+			NickNameList list = c.getNickList();
 			if (!list.containsNickName(nick)) {
 				list.addNickName(nick);
 				list.organizeByStatus();
 			}
-			PIRCChannelWindow window = getChannelWindow(channel);
+			PIRCChannelWindow window = pircMain.getChannelWindow(channel);
 			if (window != null) {
 				window.updateNicks();
 				window.append(
-					nick + " (" + host + ") " + " Entrou no " + channel);
+					nick + " (" + hostOf(prefix) + ")  Entrou no " + channel);
 			}
 		}
 	}
 
+	@Override
 	public void onPart(String channel, String prefix) {
-		String host = hostOf(prefix);
 		String nick = nickOf(prefix);
-		if (!pircMain.getChannels().getChannelExists(channel)) {
+		Channel c = channels().get(channel);
+		if (c == null) {
 			return;
 		}
-		if (!isMe(nick)) {
-			NickNameList list =
-				pircMain.getChannels().getChannel(channel).getNickList();
-			list.removeNickname(nick);
-			list.organizeByStatus();
-			PIRCChannelWindow window = getChannelWindow(channel);
-			if (window != null) {
-				window.updateNicks();
-				window.append(
-					nick + " (" + host + ") " + " saiu do " + channel);
-			}
-		} else {
+		if (isMe(nick)) {
 			pircMain.removeChannel(channel);
+			return;
+		}
+		NickNameList list = c.getNickList();
+		list.removeNickname(nick);
+		list.organizeByStatus();
+		PIRCChannelWindow window = pircMain.getChannelWindow(channel);
+		if (window != null) {
+			window.updateNicks();
+			window.append(
+				nick + " (" + hostOf(prefix) + ")  saiu do " + channel);
 		}
 	}
 
+	@Override
 	public void onNick(String newNick, String oldNick) {
 		String host = hostOf(oldNick);
 		oldNick = nickOf(oldNick);
 		if (isMe(oldNick)) {
 			pircMain.setMyNickName(newNick);
-			pircMain.getMainWindow().append(
-				"-\r\nVocê agora é conhecido como " + newNick);
+			status("Você agora é conhecido como " + newNick);
 		}
-		for (int i = 0; i < pircMain.getChannelsIn().size(); i++) {
-			String currChan = (String) pircMain.getChannelsIn().get(i);
-			Channel c = pircMain.getChannels().getChannel(currChan);
-			if (c == null || !c.getNickList().containsNickName(oldNick)) {
+		for (Channel c : channels().all()) {
+			if (!c.getNickList().containsNickName(oldNick)) {
 				continue;
 			}
 			c.getNickList().updateNickName(oldNick, newNick);
-			PIRCChannelWindow window = getChannelWindow(currChan);
+			PIRCChannelWindow window = pircMain.getChannelWindow(c.getName());
 			if (window != null) {
 				window.append(
-					oldNick
-						+ " ("
-						+ host
-						+ ") "
-						+ " mudou o nick para "
-						+ newNick);
+					oldNick + " (" + host + ")  mudou o nick para " + newNick);
 				window.updateNicks();
 			}
 		}
 		pircMain.renamePrivateWindow(oldNick, newNick);
 	}
 
+	@Override
 	public void onQuit(String prefix, String reason) {
 		String host = hostOf(prefix);
 		String nick = nickOf(prefix);
-		for (int i = 0; i < pircMain.getChannelsIn().size(); i++) {
-			String currChan = (String) pircMain.getChannelsIn().get(i);
-			Channel c = pircMain.getChannels().getChannel(currChan);
-			if (c == null || !c.getNickList().containsNickName(nick)) {
+		for (Channel c : channels().all()) {
+			if (!c.getNickList().containsNickName(nick)) {
 				continue;
 			}
 			c.getNickList().removeNickname(nick);
-			PIRCChannelWindow window = getChannelWindow(currChan);
+			PIRCChannelWindow window = pircMain.getChannelWindow(c.getName());
 			if (window != null) {
 				window.updateNicks();
 				window.append(
-					nick + " (" + host + ") " + " saiu do IRC (" + strip(reason) + ")");
+					nick + " (" + host + ")  saiu do IRC (" + strip(reason) + ")");
 			}
 		}
 		PrivateMessageSession session = pircMain.getPrivateWindow(nick, false);
@@ -460,14 +362,16 @@ public class ProtocolHandler
 		}
 	}
 
+	@Override
 	public void onKick(String channel, String who, String by, String reason) {
-		if (!pircMain.getChannels().getChannelExists(channel)) {
+		Channel c = channels().get(channel);
+		if (c == null) {
 			return;
 		}
 		if (isMe(who)) {
 			pircMain.removeChannel(channel);
-			pircMain.getMainWindow().append(
-				"-\r\nVocê foi kickado do "
+			status(
+				"Você foi kickado do "
 					+ channel
 					+ " por "
 					+ by
@@ -475,10 +379,8 @@ public class ProtocolHandler
 					+ strip(reason)
 					+ ")");
 		} else {
-			NickNameList list =
-				pircMain.getChannels().getChannel(channel).getNickList();
-			list.removeNickname(who);
-			PIRCChannelWindow window = getChannelWindow(channel);
+			c.getNickList().removeNickname(who);
+			PIRCChannelWindow window = pircMain.getChannelWindow(channel);
 			if (window != null) {
 				window.updateNicks();
 				window.append(
@@ -487,30 +389,26 @@ public class ProtocolHandler
 		}
 	}
 
+	@Override
 	public void onMode(String target, String modes, String by) {
-		PIRCChannelWindow window = getChannelWindow(target);
-		if (isChannel(target) && window != null) {
+		PIRCChannelWindow window =
+			isChannel(target) ? pircMain.getChannelWindow(target) : null;
+		if (window != null) {
 			window.append(by + " modificou o modo: " + modes);
 			/* updates the nicknames status (@ and +) */
-			try {
-				ircsocket.println("NAMES " + target);
-			} catch (IRCSocketException e) {
-			}
+			send("NAMES " + target);
 		} else {
-			pircMain.getMainWindow().append(
-				"-\r\n" + by + " modificou o modo de " + target + ": " + modes);
+			status(by + " modificou o modo de " + target + ": " + modes);
 		}
 	}
 
+	@Override
 	public void onNamReply(NickNameList nicks, String chan) {
-		if (pircMain.getChannels().getChannelExists(chan)) {
-			pircMain.getChannels().getChannel(chan).setNickList(nicks);
-			pircMain
-				.getChannels()
-				.getChannel(chan)
-				.getNickList()
-				.organizeByStatus();
-			PIRCChannelWindow window = getChannelWindow(chan);
+		Channel c = channels().get(chan);
+		if (c != null) {
+			nicks.organizeByStatus();
+			c.setNickList(nicks);
+			PIRCChannelWindow window = pircMain.getChannelWindow(chan);
 			if (window != null) {
 				window.updateNicks();
 			}
@@ -519,20 +417,24 @@ public class ProtocolHandler
 		}
 	}
 
+	@Override
 	public void onChanMsg(String to, String msg, String from) {
-		PIRCChannelWindow window = getChannelWindow(to);
+		PIRCChannelWindow window = pircMain.getChannelWindow(to);
 		if (window != null) {
 			window.append("<" + from + "> " + strip(msg));
 		}
 	}
 
+	@Override
 	public void onPrivMsg(String from, String msg) {
 		pircMain.getPrivateWindow(from, true).append(
 			"<" + from + "> " + strip(msg));
 	}
 
+	@Override
 	public void onNotice(String to, String msg, String from) {
-		PIRCChannelWindow window = isChannel(to) ? getChannelWindow(to) : null;
+		PIRCChannelWindow window =
+			isChannel(to) ? pircMain.getChannelWindow(to) : null;
 		if (window != null) {
 			window.append("-" + from + "- " + strip(msg));
 		} else {
@@ -540,14 +442,17 @@ public class ProtocolHandler
 		}
 	}
 
+	@Override
 	public void onCtcp(String to, String msg, String from) {
-		String ctcp = firstToken(msg).toUpperCase();
-		String args = msg.substring(firstToken(msg).length()).trim();
-		try {
-			if (ctcp.equals("ACTION")) {
+		int space = msg.indexOf(' ');
+		String ctcp =
+			(space == -1 ? msg : msg.substring(0, space)).toUpperCase(Locale.ROOT);
+		String args = space == -1 ? "" : msg.substring(space + 1).trim();
+		switch (ctcp) {
+			case "ACTION" -> {
 				String text = "* " + from + " " + strip(args);
 				if (isChannel(to)) {
-					PIRCChannelWindow window = getChannelWindow(to);
+					PIRCChannelWindow window = pircMain.getChannelWindow(to);
 					if (window != null) {
 						window.append(text);
 					}
@@ -555,39 +460,43 @@ public class ProtocolHandler
 					pircMain.getPrivateWindow(from, true).append(text);
 				}
 				return;
-			} else if (ctcp.equals("VERSION")) {
-				ircsocket.println(
-					"NOTICE "
-						+ from
-						+ " :\u0001VERSION pIRC 0.7BETA - Java "
-						+ System.getProperty("java.version")
-						+ " - "
-						+ System.getProperty("os.name")
-						+ "\u0001");
-			} else if (ctcp.equals("PING")) {
-				ircsocket.println(
-					"NOTICE " + from + " :\u0001PING " + args + "\u0001");
 			}
-		} catch (IRCSocketException e) {
+			case "VERSION" -> send(
+				"NOTICE "
+					+ from
+					+ " :\u0001VERSION pIRC "
+					+ PIRCFrame.VERSION
+					+ " - Java "
+					+ System.getProperty("java.version")
+					+ " - "
+					+ System.getProperty("os.name")
+					+ "\u0001");
+			case "PING" -> send("NOTICE " + from + " :\u0001PING " + args + "\u0001");
+			default -> {
+				// other CTCP requests are only shown
+			}
 		}
-		pircMain.getMainWindow().append(
-			"-\r\n[" + ctcp + "] de " + from);
+		status("[" + ctcp + "] de " + from);
 	}
 
+	@Override
 	public void onTopic(String channel, String param) {
-		if (pircMain.getChannels().getChannelExists(channel)) {
-			pircMain.getChannels().getChannel(channel).setTopic(strip(param));
-			PIRCChannelWindow window = getChannelWindow(channel);
+		Channel c = channels().get(channel);
+		if (c != null) {
+			c.setTopic(strip(param));
+			PIRCChannelWindow window = pircMain.getChannelWindow(channel);
 			if (window != null) {
 				window.updateTopic();
 			}
 		}
 	}
 
+	@Override
 	public void onTopicSet(String by, String chan, String newTopic) {
-		if (pircMain.getChannels().getChannelExists(chan)) {
-			pircMain.getChannels().getChannel(chan).setTopic(strip(newTopic));
-			PIRCChannelWindow window = getChannelWindow(chan);
+		Channel c = channels().get(chan);
+		if (c != null) {
+			c.setTopic(strip(newTopic));
+			PIRCChannelWindow window = pircMain.getChannelWindow(chan);
 			if (window != null) {
 				window.append(
 					by + " Modificou o tópico para: " + strip(newTopic));
@@ -595,13 +504,9 @@ public class ProtocolHandler
 		}
 	}
 
-	private String socketData;
-	private String command, param, prefix;
-	private int numCommand;
-	private PIRCConnectionWindow conWindow;
-	private boolean isNumeric;
+	private final PIRCFrame pircMain;
+	private final IRCSocket ircsocket;
+	private final PIRCConnectionWindow conWindow;
+	private final Map<String, NickNameList> names = new HashMap<>();
 	private boolean registered;
-	private PIRCFrame pircMain;
-	private final Hashtable names = new Hashtable();
-	private final ColorStrip colorStrip = new ColorStrip();
 }

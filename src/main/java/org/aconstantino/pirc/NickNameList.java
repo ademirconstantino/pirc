@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )
@@ -21,18 +21,22 @@
 
 package org.aconstantino.pirc;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 /**
   * This object consists of maintaining the nicknames contained in a Channel,
   * methods to organize them and to maintain them well in way structured.
+  * The nicknames keep their status prefix (@ for operators, + for voice).
   *
   * @author Ademir Constantino Filho
   * @since pIRC 0.1
-  * @version 0.1
+  * @version 0.2
   */
 
-public class NickNameList extends Vector {
+public final class NickNameList implements Iterable<String> {
 
 	/**
 	 * Add a nickName to the NickNameList 
@@ -40,35 +44,34 @@ public class NickNameList extends Vector {
 	 */
 
 	public void addNickName(String nick) {
-		this.addElement(nick);
+		nicks.add(nick);
 	}
 
 	/**
-	 * Replace a nickName to the NickNameList 
-	 * @param oldNickName The 'OLD' NickName String to be removed from vector
-	 * @param newNickName The 'NEW' NickName String to be added to vector
+	 * Replace a nickName, keeping its status
+	 * @param oldNickName The 'OLD' NickName String to be removed
+	 * @param newNickName The 'NEW' NickName String to be added
 	 */
 
 	public void updateNickName(String oldNickName, String newNickName) {
-		int index = this.indexOfNickName(oldNickName);
+		int index = indexOfNickName(oldNickName);
 		if (index == -1) {
 			return;
 		}
-		String old = (String) this.get(index);
-		this.removeElementAt(index);
-		this.addNickName(getStatus(old) + newNickName);
-		this.organizeByStatus();
+		String old = nicks.remove(index);
+		addNickName(getStatus(old) + newNickName);
+		organizeByStatus();
 	}
 
 	/**
-	 * Remove a nickName from the NickList Vector.
+	 * Remove a nickName from the list.
 	 * @param nick Nickname String to remove
 	 */
 
 	public void removeNickname(String nick) {
-		int index = this.indexOfNickName(nick);
+		int index = indexOfNickName(nick);
 		if (index > -1) {
-			this.removeElementAt(index);
+			nicks.remove(index);
 		}
 	}
 
@@ -79,7 +82,7 @@ public class NickNameList extends Vector {
 	 */
 
 	public boolean containsNickName(String nick) {
-		return this.indexOfNickName(nick) > -1;
+		return indexOfNickName(nick) > -1;
 	}
 
 	/**
@@ -90,8 +93,8 @@ public class NickNameList extends Vector {
 
 	public int indexOfNickName(String nick) {
 		String clean = stripStatus(nick);
-		for (int i = 0; i < this.size(); i++) {
-			if (stripStatus((String) this.get(i)).equalsIgnoreCase(clean)) {
+		for (int i = 0; i < nicks.size(); i++) {
+			if (stripStatus(nicks.get(i)).equalsIgnoreCase(clean)) {
 				return i;
 			}
 		}
@@ -115,52 +118,40 @@ public class NickNameList extends Vector {
 		return "";
 	}
 
+	private static int statusOrder(String nick) {
+		return switch (getStatus(nick)) {
+			case "@" -> 0;
+			case "+" -> 1;
+			default -> 2;
+		};
+	}
+
 	/**
-	 * <P> Organize all NickNames by Status </P>
+	 * <P> Organize all NickNames by Status, keeping the order inside each status </P>
 	 * <br> 1.&nbsp;Operator; <br>&nbsp;2.Voice; <br>&nbsp;3.Normal User;
 	 */
 
 	public void organizeByStatus() {
-
-		//{{{ ~ begins the organization
-		/* creates temporary vectors to do the nicknames organization */
-		Vector temporary, temporaryb, temporaryc, temporaryd;
-		/* The Current Value */
-		String curr;
-		/* Ok, set an approximate value */
-		temporary = new Vector(this.size());
-		temporaryb = new Vector(this.size());
-		temporaryc = new Vector(this.size());
-		/* Parse values */
-		for (int i = 0; i < (int) this.size(); i++) {
-			curr = (String) this.get(i);
-			if (curr.startsWith("@")) {
-				temporary.addElement(curr);
-			} else if (curr.startsWith("+")) {
-				temporaryb.addElement(curr);
-			} else {
-				temporaryc.addElement(curr);
-			}
-		}
-		/* resize vectors */
-		temporary.setSize(temporary.size());
-		temporaryb.setSize(temporaryb.size());
-		temporaryc.setSize(temporaryc.size());
-		temporaryd = new Vector(this.size());
-		/* first operators then voicers and users */
-		for (int i = 0; i < (int) temporary.size(); i++) {
-			temporaryd.addElement((String) temporary.get(i));
-		}
-		for (int i = 0; i < (int) temporaryb.size(); i++) {
-			temporaryd.addElement((String) temporaryb.get(i));
-		}
-		for (int i = 0; i < (int) temporaryc.size(); i++) {
-			temporaryd.addElement((String) temporaryc.get(i));
-		}
-		this.removeAllElements();
-		for (int i = 0; i < (int) temporaryd.size(); i++) {
-			this.addElement(temporaryd.get(i));
-		}
-		// ~ ends the organization ;) }}}
+		nicks.sort(Comparator.comparingInt(NickNameList::statusOrder));
 	}
+
+	public int size() {
+		return nicks.size();
+	}
+
+	public String get(int index) {
+		return nicks.get(index);
+	}
+
+	@Override
+	public Iterator<String> iterator() {
+		return nicks.iterator();
+	}
+
+	@Override
+	public String toString() {
+		return nicks.toString();
+	}
+
+	private final List<String> nicks = new ArrayList<>();
 }

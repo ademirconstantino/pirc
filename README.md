@@ -7,13 +7,25 @@ Recovered from the branch: 1.2
 Date: 13/11/2004
 
 This was one of my first projects using the Java 1.3 programming language.
+It has been ported to Java 17.
 
 ## Build and run
+
+Requires JDK 17 or newer.
+
+With Maven (compiles, runs the tests and creates `target/pirc.jar`):
+
+	mvn package
+	java -jar target/pirc.jar
+
+Without Maven (creates `pirc.jar`, does not run the tests):
 
 	./build.sh
 	java -jar pirc.jar
 
 Run it from the project directory, pIRC reads the servers from `cfg/servers.xml`.
+The sources are in `src/main/java`, the images in `src/main/resources` and the
+tests in `src/test/java`.
 Use *Arquivo > Conectar* to choose a server and connect.
 
 Text typed in the windows is sent as a message; text starting with `/` is sent

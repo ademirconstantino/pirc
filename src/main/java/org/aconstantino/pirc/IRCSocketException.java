@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - IRC Client written in Java.
   * 
   * ( Copyright (C) 2002 -  Ademir Constantino Filho )

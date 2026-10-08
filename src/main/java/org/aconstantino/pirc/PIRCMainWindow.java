@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -26,72 +26,23 @@
 
 package org.aconstantino.pirc;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-
-import javax.swing.JInternalFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-
 /**
+ * The status window: shows the server messages, the typed text is sent
+ * to the server.
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 17/09/2002 -  12:03:22 
  */
-public class PIRCMainWindow extends JInternalFrame {
+public final class PIRCMainWindow extends ChatWindow {
 
 	public PIRCMainWindow(PIRCFrame pircFrame) {
-		super("Main Window");
-		this.pircFrame = pircFrame;
-		init();
-	}
-
-	private void init() {
-		tPanel.setLayout(new BorderLayout());
-		tPanel.add(tScroll, BorderLayout.CENTER);
-		tPanel.add(tField, BorderLayout.SOUTH);
-		this.getContentPane().add(tPanel);
-		tScroll.setAutoscrolls(true);
-		setVisible(true);
-		tMain.setEditable(false);
-		tMain.setForeground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		tMain.setFont(new Font("Verdana", 1, 12));
-		tField.setBackground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		tField.setFont(new Font("Verdana", 1, 12));
-		tField.addKeyListener(new KeyAdapter() {
-			public void keyReleased(KeyEvent evt) {
-				if (evt.getKeyChar() == evt.VK_ENTER) {
-					String echo = pircFrame.sendInput(null, tField.getText());
-					if (echo != null) {
-						append(echo);
-					}
-					tField.setText("");
-				}
-			}
-		});
-		setResizable(true);
-		setMaximizable(true);
-		setIconifiable(true);
+		super("Main Window", pircFrame, false);
 		setSize(400, 400);
-		show();
+		setVisible(true);
 	}
 
-	public void append(String s) {
-		tMain.append(s + "\r\n");
-		tMain.setCaretPosition(tMain.getDocument().getLength());
+	@Override
+	String getTarget() {
+		return null;
 	}
-
-	private final JTextArea tMain = new JTextArea();
-	private final JScrollPane tScroll = new JScrollPane(tMain);
-	private final JTextField tField = new JTextField();
-	private final JPanel tPanel = new JPanel();
-	private PIRCFrame pircFrame;
 
 }

@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -27,47 +27,60 @@
 package org.aconstantino.pirc;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 
 import javax.swing.DefaultListModel;
-import javax.swing.JInternalFrame;
 import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
-import javax.swing.event.InternalFrameListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 /**
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 20/09/2002 -  18:37:37 
  */
-public class PIRCChannelWindow
-	extends JInternalFrame
-	implements ListSelectionListener {
+public final class PIRCChannelWindow extends ChatWindow {
 
 	public PIRCChannelWindow(Channel channel, PIRCFrame pircframe) {
-		super(channel.getName());
-		this.pircFrame = pircframe;
+		super(channel.getName(), pircframe, true);
 		this.channel = channel;
-		init();
+		nicks.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		nicks.setFont(FONT);
+		nicks.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent evt) {
+				if (evt.getClickCount() == 2) {
+					openPrivate();
+				}
+			}
+		});
+		getChatPanel().add(new JScrollPane(nicks), BorderLayout.EAST);
+		updateNicks();
+		addInternalFrameListener(new InternalFrameAdapter() {
+			@Override
+			public void internalFrameClosed(InternalFrameEvent evt) {
+				sair();
+			}
+		});
+		setClosable(true);
+		setSize(700, 400);
+		setVisible(true);
+	}
+
+	@Override
+	String getTarget() {
+		return channel.getName();
 	}
 
 	public void updateNicks() {
-		nicksModel.removeAllElements();
-		for (int i = 0; i < channel.getNickList().size(); i++) {
-			nicksModel.addElement(channel.getNickList().get(i));
+		nicksModel.clear();
+		for (String nick : channel.getNickList()) {
+			nicksModel.addElement(nick);
 		}
 	}
 
@@ -76,130 +89,44 @@ public class PIRCChannelWindow
 			"-- Talking in "
 				+ channel.getName()
 				+ " - "
-				+ (new String(new Date().toString())));
+				+ ZonedDateTime.now().format(
+					DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)));
 		append(channel.getName() + " Topic is \"" + channel.getTopic() + "\"");
 	}
 
-	public void init() {
-		nicks.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-		nickPanel.setLayout(new BorderLayout());
-		nickPanel.add(nickScroll);
-		for (int i = 0; i < channel.getNickList().size(); i++) {
-			nicksModel.addElement(channel.getNickList().get(i));
+	/**
+	 * Leaves the channel when the window is closed by the user
+	 */
+	private void sair() {
+		if (pircFrame.getChannelWindow(channel.getName()) != this) {
+			/* the channel was already removed (kick, part, disconnection) */
+			return;
 		}
-		tScroll.setAutoscrolls(true);
-		tPanel.setLayout(new BorderLayout());
-		tPanel.add(tScroll, BorderLayout.CENTER);
-		tPanel.add(tField, BorderLayout.SOUTH);
-		tPanel.add(nickPanel, BorderLayout.EAST);
-		this.getContentPane().add(tPanel);
-		tMain.setEditable(false);
-		tMain.setForeground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		this.addInternalFrameListener(new InternalFrameListener() {
-			public void internalFrameOpened(InternalFrameEvent evt) {
-			}
-			public void internalFrameClosing(InternalFrameEvent evt) {
-			}
-			public void internalFrameClosed(InternalFrameEvent evt) {
-				sair(evt);
-			}
-			public void internalFrameIconified(InternalFrameEvent evt) {
-			}
-			public void internalFrameDeiconified(InternalFrameEvent evt) {
-			}
-			public void internalFrameActivated(InternalFrameEvent evt) {
-			}
-			public void internalFrameDeactivated(InternalFrameEvent evt) {
-			}
-		});
-		nicks.setFont(new Font("Verdana", 1, 12));
-		tMain.setFont(new Font("Verdana", 1, 12));
-		tField.setBackground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		tField.setFont(new Font("Verdana", 1, 12));
-		tField.addKeyListener(new KeyAdapter() {
-			public void keyReleased(KeyEvent evt) {
-				if (evt.getKeyChar() == evt.VK_ENTER) {
-					String echo =
-						pircFrame.sendInput(channel.getName(), tField.getText());
-					if (echo != null) {
-						append(echo);
-					}
-					tField.setText("");
-				}
-			}
-		});
-		nicks.addMouseListener(new MouseAdapter() {
-			public void mouseClicked(MouseEvent evt) {
-				if (evt.getClickCount() == 2) {
-					openPrivate();
-				}
-			}
-		});
-
-		setResizable(true);
-		setVisible(true);
-		setClosable(true);
-		setMaximizable(true);
-		setIconifiable(true);
-		setSize(700, 400);
-		show();
-	}
-
-	public void sair(InternalFrameEvent evt) {
-		if (pircFrame.isConnected()
-			&& pircFrame.getChannelWindow(channel) == this) {
+		if (pircFrame.isConnected()) {
 			try {
 				pircFrame.getIrcSocket().println("PART " + channel.getName());
 			} catch (IRCSocketException e) {
+				// the reader thread notices the closed connection
 			}
 		}
-		if (pircFrame.getChannelWindow(channel) == this) {
-			pircFrame.removeChannel(channel.getName());
-		}
+		pircFrame.removeChannel(channel.getName());
 	}
 
 	/**
 	 * Opens a private message window with the selected nickname
 	 */
 	private void openPrivate() {
-		Object selected = nicks.getSelectedValue();
+		String selected = nicks.getSelectedValue();
 		if (selected != null) {
-			String nick = NickNameList.stripStatus((String) selected);
-			if (!nick.equals(pircFrame.getMyNickName())) {
+			String nick = NickNameList.stripStatus(selected);
+			if (!nick.equalsIgnoreCase(pircFrame.getMyNickName())) {
 				pircFrame.getPrivateWindow(nick, true);
 			}
 		}
 	}
 
-	public void append(String str) {
-		tMain.append(getTimeStamp() + "  " + str + "\r\n");
-		tMain.setCaretPosition(tMain.getDocument().getLength());
-	}
-
-	public String getTimeStamp() {
-		String ho = "[h:mm:ss]";
-		Date d = new Date();
-		String h = "";
-		SimpleDateFormat formatter = new SimpleDateFormat(ho);
-		h = formatter.format(d);
-
-		return h;
-	}
-
-	public void valueChanged(ListSelectionEvent e) {
-	}
-
-	private final JTextArea tMain = new JTextArea();
-	private final JScrollPane tScroll = new JScrollPane(tMain);
-	private final JTextField tField = new JTextField();
-	private final JPanel tPanel = new JPanel();
-	private final JPanel nickPanel = new JPanel();
-	private final DefaultListModel nicksModel = new DefaultListModel();
-	private final JList nicks = new JList(nicksModel);
-	private JScrollPane nickScroll = new JScrollPane(nicks);
-	private PIRCFrame pircFrame;
-	private Channel channel;
+	private final Channel channel;
+	private final DefaultListModel<String> nicksModel = new DefaultListModel<>();
+	private final JList<String> nicks = new JList<>(nicksModel);
 
 }

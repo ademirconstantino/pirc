@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -27,231 +27,150 @@
 package org.aconstantino.pirc;
 
 import java.awt.BorderLayout;
-import java.awt.Dialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.Window;
 import java.io.IOException;
-import java.util.Vector;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.WindowConstants;
 
 /**
+ * Dialog to add or edit a server of the servers list
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 01/10/2002 -  08:44:35 
  */
-public class PIRCEditServer extends JDialog {
+public final class PIRCEditServer extends JDialog {
 
-	public PIRCEditServer(Dialog owner, PIRCServersReader reader) {
-		super(owner);
+	/**
+	 * @param owner the connection window
+	 * @param reader the servers list, saved when the user clicks Ok
+	 * @param groups the groups shown in the group combo
+	 * @param server the server to edit or null to add a new server
+	 */
+	public PIRCEditServer(
+		Window owner,
+		PIRCServersReader reader,
+		List<String> groups,
+		Server server) {
+		super(owner, ModalityType.APPLICATION_MODAL);
 		this.reader = reader;
-		init();
-	}
-
-	private void init() {
-
-		java.awt.GridBagConstraints gridBagConstraints;
-		setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-		setTitle("Adicionar Servidor");
-		setModal(true);
-		setResizable(false);
-		jp1.setLayout(new GridBagLayout());
-		jp1.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-		jlb.setText("Nome");
-		jlb.setToolTipText("name");
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 0;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		jp1.add(jlb, gridBagConstraints);
-		jld.setText("URL");
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 1;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		jp1.add(jld, gridBagConstraints);
-		jlc.setText("Porta");
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 2;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		jp1.add(jlc, gridBagConstraints);
-		jla.setText("Grupo");
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 0;
-		gridBagConstraints.gridy = 3;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(0, 0, 0, 9);
-		jp1.add(jla, gridBagConstraints);
-		tFieldA.setColumns(20);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 0;
-		gridBagConstraints.gridwidth = 5;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(2, 0, 2, 0);
-		jp1.add(tFieldA, gridBagConstraints);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 1;
-		gridBagConstraints.gridwidth = 5;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(2, 0, 2, 0);
-		jp1.add(tField, gridBagConstraints);
-		tFieldC.setText("6667");
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 2;
-		gridBagConstraints.gridwidth = 5;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(2, 0, 2, 0);
-		jp1.add(tFieldC, gridBagConstraints);
-		jcA.setEditable(true);
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 1;
-		gridBagConstraints.gridy = 3;
-		gridBagConstraints.gridwidth = 5;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		jp1.add(jcA, gridBagConstraints);
-		jb1.setText("Ok");
-		jb1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				okEvent();
-			}
-		});
-		gridBagConstraints = new GridBagConstraints();
-		gridBagConstraints.gridx = 2;
-		gridBagConstraints.gridy = 4;
-		gridBagConstraints.gridwidth = 3;
-		gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-		gridBagConstraints.insets = new Insets(10, 0, 0, 0);
-		jp1.add(jb1, gridBagConstraints);
-		getContentPane().add(jp1, BorderLayout.CENTER);
-		getRootPane().setDefaultButton(jb1);
-		pack();
-	}
-
-	/**
-	 * Sets the server to be edited
-	 * @param server { group, name, url, port } or null to add a new server
-	 */
-	public void setServer(String[] server) {
 		this.server = server;
-		if (server != null) {
-			setServerName(server[1]);
-			setGroupName(server[0]);
-			tFieldA.setText(server[1]);
-			tField.setText(server[2]);
-			tFieldC.setText(server[3]);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setResizable(false);
+
+		groups.forEach(group::addItem);
+		group.setEditable(true);
+		name.setColumns(20);
+		if (server == null) {
+			setTitle("Adicionar Servidor");
+			port.setText("6667");
+		} else {
+			setTitle("Editar " + server.name());
+			name.setText(server.name());
+			url.setText(server.host());
+			port.setText(String.valueOf(server.port()));
+			group.setSelectedItem(server.group());
 		}
+
+		JPanel panel = new JPanel(new GridBagLayout());
+		panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+		addRow(panel, 0, "Nome", name);
+		addRow(panel, 1, "URL", url);
+		addRow(panel, 2, "Porta", port);
+		addRow(panel, 3, "Grupo", group);
+
+		JButton ok = new JButton("Ok");
+		ok.addActionListener(e -> okEvent());
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 2;
+		c.gridy = 4;
+		c.gridwidth = 3;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets(10, 0, 0, 0);
+		panel.add(ok, c);
+		getContentPane().add(panel, BorderLayout.CENTER);
+		getRootPane().setDefaultButton(ok);
+		pack();
+		setLocationRelativeTo(owner);
 	}
 
-	/**
-	 * Sets the groups shown in the group combo
-	 */
-	public void setGroups(Vector groups) {
-		jcA.removeAllItems();
-		for (int i = 0; i < groups.size(); i++) {
-			jcA.addItem(groups.get(i));
-		}
-		if (groupName != null) {
-			jcA.setSelectedItem(groupName);
-		}
+	private static void addRow(JPanel panel, int row, String label, JComponent field) {
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = row;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets(0, 0, 0, 9);
+		panel.add(new JLabel(label), c);
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = row;
+		c.gridwidth = 5;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets(2, 0, 2, 0);
+		panel.add(field, c);
 	}
 
 	private void okEvent() {
-		String name = tFieldA.getText().trim();
-		String url = tField.getText().trim();
-		String port = tFieldC.getText().trim();
-		Object group = jcA.getSelectedItem();
-		String groupValue = group == null ? "" : group.toString().trim();
-		if (name.length() == 0
-			|| url.length() == 0
-			|| groupValue.length() == 0) {
-			JOptionPane.showMessageDialog(
-				this,
-				"Preencha todos os campos.",
-				getTitle(),
-				JOptionPane.WARNING_MESSAGE);
+		Object selectedGroup = group.getEditor().getItem();
+		String groupValue = selectedGroup == null ? "" : selectedGroup.toString().trim();
+		String nameValue = name.getText().trim();
+		String urlValue = url.getText().trim();
+		if (nameValue.isEmpty() || urlValue.isEmpty() || groupValue.isEmpty()) {
+			warn("Preencha todos os campos.");
 			return;
 		}
+		int portValue;
 		try {
-			if (Integer.parseInt(port) <= 0) {
-				throw new NumberFormatException();
-			}
+			portValue = Integer.parseInt(port.getText().trim());
 		} catch (NumberFormatException e) {
-			JOptionPane.showMessageDialog(
-				this,
-				"Porta inválida.",
-				getTitle(),
-				JOptionPane.WARNING_MESSAGE);
+			portValue = -1;
+		}
+		if (portValue <= 0 || portValue > 65535) {
+			warn("Porta inválida.");
 			return;
 		}
+		Server saved = new Server(groupValue, nameValue, urlValue, portValue);
 		if (server == null) {
-			server = new String[] { groupValue, name, url, port, "server" };
-			reader.getH().add(server);
+			reader.add(saved);
 		} else {
-			server[0] = groupValue;
-			server[1] = name;
-			server[2] = url;
-			server[3] = port;
+			reader.replace(server, saved);
 		}
 		try {
 			reader.save();
 		} catch (IOException e) {
-			new PIRCExceptionWindow("Não foi possível salvar", e).show();
+			PIRCExceptionWindow.showError(this, "Não foi possível salvar", e);
 		}
-		saved = true;
+		savedServer = saved;
 		dispose();
 	}
 
+	private void warn(String message) {
+		JOptionPane.showMessageDialog(this, message, getTitle(), JOptionPane.WARNING_MESSAGE);
+	}
+
 	/**
-	 * @return <code> true </code> if the server was saved
+	 * @return the saved server or null if the user did not save it
 	 */
-	public boolean isSaved() {
-		return saved;
+	public Server getSavedServer() {
+		return savedServer;
 	}
 
-	public String getGroupName() {
-		return groupName;
-	}
-
-	public String getServerName() {
-		return serverName;
-	}
-
-	public void setGroupName(String groupName) {
-		this.groupName = groupName;
-	}
-
-	public void setServerName(String serverName) {
-		this.serverName = serverName;
-		this.setTitle("Editar " + serverName);
-	}
-
-	private final JLabel jld = new JLabel();
-	private final JButton jb1 = new JButton();
-	private final JPanel jp1 = new JPanel();
-	private final JComboBox jcA = new JComboBox();
-	private final JLabel jla = new JLabel();
-	private final JLabel jlb = new JLabel();
-	private final JLabel jlc = new JLabel();
-	private final JTextField tFieldC = new JTextField();
-	private final JTextField tField = new JTextField();
-	private final JTextField tFieldA = new JTextField();
+	private final JTextField name = new JTextField();
+	private final JTextField url = new JTextField();
+	private final JTextField port = new JTextField();
+	private final JComboBox<String> group = new JComboBox<>();
 	private final PIRCServersReader reader;
-	private String serverName, groupName;
-	private String[] server;
-	private boolean saved;
+	private final Server server;
+	private Server savedServer;
 
 }

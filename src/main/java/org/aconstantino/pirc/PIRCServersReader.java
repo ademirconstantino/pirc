@@ -1,8 +1,8 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
-  * 
+  *
   * Copyright (C) 2002 -  Ademir Constantino Filho
-  * 
+  *
   * Este programa é software livre; você pode redistribuí-lo e/ou
   * modificá-lo sob os termos da Licença Pública Geral GNU, conforme
   * publicada pela Free Software Foundation; tanto a versão 2 da
@@ -24,120 +24,160 @@
   *
   */
 
-//
-
 package org.aconstantino.pirc;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.Hashtable;
-import java.util.Vector;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class PIRCServersReader extends DefaultHandler {
+/**
+ * Reads and saves the servers list:
+ * &lt;server url="..." port="6667" group="..." name="..."/&gt;
+ */
+public final class PIRCServersReader {
 
-	public PIRCServersReader(String fName) {
-		this.fName = fName;
-		init();
+	/**
+	 * Reads the servers of the xml file. If the file can not be read
+	 * the list starts empty and the error is printed.
+	 * @param xmlFile the servers file
+	 */
+	public PIRCServersReader(Path xmlFile) {
+		this.xmlFile = xmlFile;
+		try (InputStream in = Files.newInputStream(xmlFile)) {
+			newParserFactory().newSAXParser().parse(in, new DefaultHandler() {
+				@Override
+				public void startElement(
+					String uri,
+					String localName,
+					String qName,
+					Attributes attributes) {
+					if (qName.equals("server")) {
+						addServer(attributes);
+					}
+				}
+			});
+		} catch (IOException | SAXException | ParserConfigurationException e) {
+			System.err.println("Could not read " + xmlFile + ": " + e.getMessage());
+		}
 	}
 
-	private void init() {
-		xmlFile = new File(fName);
+	private static SAXParserFactory newParserFactory()
+		throws ParserConfigurationException, SAXException {
+		SAXParserFactory spf = SAXParserFactory.newInstance();
 		spf.setValidating(false);
+		/* the file is local, but there is no reason to load external entities */
+		spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		spf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		return spf;
+	}
+
+	private void addServer(Attributes attributes) {
+		String port = attributes.getValue("port");
 		try {
-			parser = spf.newSAXParser();
-		} catch (ParserConfigurationException e) {
-			e.printStackTrace();
-		} catch (SAXException e) {
-			e.printStackTrace();
-		}
-		try {
-			parser.parse(xmlFile, this);
-		} catch (SAXException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+			servers.add(
+				new Server(
+					value(attributes, "group"),
+					value(attributes, "name"),
+					value(attributes, "url"),
+					Integer.parseInt(port == null ? "" : port.trim())));
+		} catch (IllegalArgumentException e) {
+			System.err.println(
+				"Ignoring server " + attributes.getValue("name") + ": " + e.getMessage());
 		}
 	}
 
-	public void startElement(String a, String b, String c, Attributes d) {
-		if (c.equals("server")) {
-			int urlIndex = d.getIndex("url");
-			String urlValue = d.getValue(urlIndex);
-			int portIndex = d.getIndex("port");
-			String portValue = d.getValue(portIndex);
-			int groupIndex = d.getIndex("group");
-			String groupValue = d.getValue(groupIndex);
-			int nameIndex = d.getIndex("name");
-			String nameValue = d.getValue(nameIndex);
-			h.addElement(
-				new String[] { groupValue, nameValue, urlValue, portValue, c });
+	private static String value(Attributes attributes, String name) {
+		String value = attributes.getValue(name);
+		return value == null ? "" : value;
+	}
+
+	/**
+	 * @return the servers, in the file order
+	 */
+	public List<Server> getServers() {
+		return List.copyOf(servers);
+	}
+
+	/**
+	 * @return the groups of the servers, without repetition, in the file order
+	 */
+	public List<String> getGroups() {
+		return servers.stream().map(Server::group).distinct().toList();
+	}
+
+	public void add(Server server) {
+		servers.add(server);
+	}
+
+	/**
+	 * Replaces a server, keeping its position in the list
+	 */
+	public void replace(Server oldServer, Server newServer) {
+		int index = servers.indexOf(oldServer);
+		if (index == -1) {
+			servers.add(newServer);
+		} else {
+			servers.set(index, newServer);
 		}
 	}
 
-	public Vector getH() {
-		return h;
+	public void remove(Server server) {
+		servers.remove(server);
 	}
 
 	/**
 	 * Saves the servers (group, name, url, port) to the xml file
 	 */
 	public void save() throws IOException {
-		PrintWriter out =
-			new PrintWriter(
-				new OutputStreamWriter(new FileOutputStream(xmlFile), "UTF-8"));
-		out.println("<?xml version='1.0'?>");
-		out.println("<servers>");
-		for (int i = 0; i < h.size(); i++) {
-			String[] s = (String[]) h.get(i);
-			out.println(
-				"<server url=\""
-					+ escape(s[2])
-					+ "\" port=\""
-					+ escape(s[3])
-					+ "\" group=\""
-					+ escape(s[0])
-					+ "\" name=\""
-					+ escape(s[1])
-					+ "\"/>");
-		}
-		out.println("</servers>");
-		out.close();
-		if (out.checkError()) {
-			throw new IOException("Error writing " + xmlFile);
+		try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(xmlFile, UTF_8))) {
+			out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+			out.println("<servers>");
+			for (Server s : servers) {
+				out.println(
+					"<server url=\""
+						+ escape(s.host())
+						+ "\" port=\""
+						+ s.port()
+						+ "\" group=\""
+						+ escape(s.group())
+						+ "\" name=\""
+						+ escape(s.name())
+						+ "\"/>");
+			}
+			out.println("</servers>");
+			if (out.checkError()) {
+				throw new IOException("Error writing " + xmlFile);
+			}
 		}
 	}
 
-	private String escape(String s) {
+	private static String escape(String s) {
 		return s
-			.replaceAll("&", "&amp;")
-			.replaceAll("\"", "&quot;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;");
+			.replace("&", "&amp;")
+			.replace("\"", "&quot;")
+			.replace("<", "&lt;")
+			.replace(">", "&gt;");
 	}
 
-	public File getXmlFile() {
+	public Path getXmlFile() {
 		return xmlFile;
 	}
 
-	public void setXmlFile(File xmlFile) {
-		this.xmlFile = xmlFile;
-	}
-
-	private String fName;
-	private File xmlFile;
-	private SAXParserFactory spf = SAXParserFactory.newInstance();
-	private SAXParser parser;
-	private Vector h = new Vector();
+	private final Path xmlFile;
+	private final List<Server> servers = new ArrayList<>();
 
 }

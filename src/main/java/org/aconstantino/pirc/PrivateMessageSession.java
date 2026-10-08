@@ -1,4 +1,4 @@
-/**
+/*
   *  pIRC - Cliente de IRC desenvolvido em Java.
   * 
   * Copyright (C) 2002 -  Ademir Constantino Filho
@@ -26,20 +26,6 @@
 
 package org.aconstantino.pirc;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import javax.swing.JInternalFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
@@ -47,68 +33,25 @@ import javax.swing.event.InternalFrameEvent;
  * @author Ademir Constantino Filho <a href="mailto:ziegfried@techie.com">ziegfried@techie.com</a>
  * 28/09/2002 -  12:21:09 
  */
-public class PrivateMessageSession extends JInternalFrame {
+public final class PrivateMessageSession extends ChatWindow {
 
 	public PrivateMessageSession(String nickname, PIRCFrame pircframe) {
-		super(nickname);
-		this.pircFrame = pircframe;
+		super(nickname, pircframe, true);
 		this.nickname = nickname;
-		init();
-	}
-
-	private void init() {
-
-		tPanel.setLayout(new BorderLayout());
-		tPanel.add(tScroll, BorderLayout.CENTER);
-		tPanel.add(tField, BorderLayout.SOUTH);
-		this.getContentPane().add(tPanel);
-		tScroll.setAutoscrolls(true);
-		setVisible(true);
-		tMain.setEditable(false);
-		tMain.setForeground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		tMain.setFont(new Font("Verdana", 1, 12));
-		tField.setBackground(Color.GRAY);
-		tMain.setBackground(Color.BLACK);
-		tField.setFont(new Font("Verdana", 1, 12));
-		tField.addKeyListener(new KeyAdapter() {
-			public void keyReleased(KeyEvent evt) {
-				if (evt.getKeyChar() == evt.VK_ENTER) {
-					String echo = pircFrame.sendInput(nickname, tField.getText());
-					if (echo != null) {
-						append(echo);
-					}
-					tField.setText("");
-				}
-			}
-		});
 		addInternalFrameListener(new InternalFrameAdapter() {
+			@Override
 			public void internalFrameClosed(InternalFrameEvent evt) {
-				pircFrame.removePrivateWindow(nickname);
+				pircFrame.removePrivateWindow(getNickname());
 			}
 		});
-
-		setResizable(true);
 		setClosable(true);
-		setMaximizable(true);
-		setIconifiable(true);
 		setSize(400, 400);
-		show();
+		setVisible(true);
 	}
 
-	public void append(String str) {
-		tMain.append(getTimeStamp() + "  " + str + "\r\n");
-		tMain.setCaretPosition(tMain.getDocument().getLength());
-	}
-
-	public String getTimeStamp() {
-		String ho = "[h:mm:ss]";
-		Date d = new Date();
-		String h = "";
-		SimpleDateFormat formatter = new SimpleDateFormat(ho);
-		h = formatter.format(d);
-
-		return h;
+	@Override
+	String getTarget() {
+		return nickname;
 	}
 
 	/**
@@ -120,18 +63,14 @@ public class PrivateMessageSession extends JInternalFrame {
 	}
 
 	/**
-	 * Sets the nickname.
+	 * Sets the nickname, when the user changes it.
 	 * @param nickname The nickname to set
 	 */
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
+		setTitle(nickname);
 	}
 
 	private String nickname;
-	private final JTextArea tMain = new JTextArea();
-	private final JScrollPane tScroll = new JScrollPane(tMain);
-	private final JTextField tField = new JTextField();
-	private final JPanel tPanel = new JPanel();
-	private PIRCFrame pircFrame;
 
 }
