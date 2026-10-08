@@ -77,7 +77,7 @@ public final class PIRCFrame extends JFrame {
 		jdp.setBackground(Color.GRAY);
 		jdp.add(pircMainWindow);
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-		setSize(800, 600);
+		setSize(1000, 780);
 		setLocation(screen.width / 6, screen.height / 6);
 		pircMainWindow.setSize(getSize());
 		try {
